@@ -56,17 +56,28 @@ export async function updateUser(
     ...(payload.senha ? { senha: payload.senha } : {}),
   };
 
-  const { data, error } = await supabase
+  const { error: updateError } = await supabase
     .from("usuarios")
     .update(updatePayload)
     .eq("id", id)
-    .eq("empresa_id", currentEmpresaId)
+    .eq("empresa_id", currentEmpresaId);
+
+  if (updateError) {
+    return {
+      data: null,
+      error: "Não foi possível atualizar o usuário.",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("usuarios")
     .select("id, username, nome, role, created_at, empresa_id, nivel")
-    .single<AppUser>();
+    .eq("id", id)
+    .maybeSingle<AppUser>();
 
   return {
     data: data ?? null,
-    error: error ? "Não foi possível atualizar o usuário." : null,
+    error: error ? "Não foi possível carregar o usuário atualizado." : null,
   };
 }
 
