@@ -2,10 +2,9 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import AppShell from "../components/AppShell";
+import OrderStatusBadge from "../components/OrderStatusBadge";
 import UserFormDialog from "../components/users/UserFormDialog";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
-import OrderStatusBadge from "../components/OrderStatusBadge";
 import { useAppSession } from "../hooks/useAppSession";
 import { createUser, deleteUser, listUsers, updateUser } from "../lib/users";
 import type { AppUser } from "../types/app";
@@ -52,18 +51,20 @@ function Users() {
       title="Usuários"
       description="Gerencie os acessos internos da empresa e seus níveis."
     >
-      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Equipe cadastrada</h2>
-            <p className="mt-1 text-sm text-slate-600">Cada usuário pertence à empresa logada.</p>
+            <h2 className="text-lg font-semibold text-white">Equipe cadastrada</h2>
+            <p className="mt-1 text-sm text-slate-300">
+              Cada usuário pertence à empresa logada.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative min-w-[260px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="pl-10"
+              <input
+                className="h-11 w-full rounded-2xl border border-white/10 bg-[#1c2a3b] pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
                 placeholder="Buscar usuário"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -85,11 +86,11 @@ function Users() {
         <div className="mt-6 grid gap-4 xl:grid-cols-2">
           {filteredUsers.length ? (
             filteredUsers.map((user) => (
-              <div key={user.id} className="rounded-3xl border border-slate-200 p-5">
+              <div key={user.id} className="rounded-3xl border border-white/10 bg-[#1c2a3b] p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">{user.nome}</h3>
-                    <p className="mt-1 text-sm text-slate-600">@{user.username}</p>
+                    <h3 className="text-lg font-semibold text-white">{user.nome}</h3>
+                    <p className="mt-1 text-sm text-blue-200">@{user.username}</p>
                   </div>
 
                   <OrderStatusBadge status={user.nivel} />
@@ -132,7 +133,7 @@ function Users() {
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+            <div className="rounded-2xl border border-dashed border-white/15 bg-[#1c2a3b] p-6 text-sm text-slate-300">
               Nenhum usuário encontrado.
             </div>
           )}

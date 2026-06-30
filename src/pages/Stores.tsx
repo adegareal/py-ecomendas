@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 import AppShell from "../components/AppShell";
 import StoreFormDialog from "../components/stores/StoreFormDialog";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
 import { useAppSession } from "../hooks/useAppSession";
 import { createStore, deleteStore, listStores, updateStore } from "../lib/stores";
 import type { Loja } from "../types/app";
@@ -45,18 +44,20 @@ function Stores() {
       title="Lojas"
       description="Cadastre e mantenha a base de lojas utilizada nos pedidos."
     >
-      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Lojas cadastradas</h2>
-            <p className="mt-1 text-sm text-slate-600">Use esta lista para facilitar a criação de itens.</p>
+            <h2 className="text-lg font-semibold text-white">Lojas cadastradas</h2>
+            <p className="mt-1 text-sm text-slate-300">
+              Use esta lista para facilitar a criação de itens.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <div className="relative min-w-[260px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="pl-10"
+              <input
+                className="h-11 w-full rounded-2xl border border-white/10 bg-[#1c2a3b] pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
                 placeholder="Buscar loja"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -78,9 +79,12 @@ function Stores() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredStores.length ? (
             filteredStores.map((store) => (
-              <div key={store.id} className="rounded-3xl border border-slate-200 bg-white p-5">
-                <p className="text-sm font-medium text-blue-600">Loja</p>
-                <h3 className="mt-2 text-lg font-semibold text-slate-900">{store.nome}</h3>
+              <div
+                key={store.id}
+                className="rounded-3xl border border-white/10 bg-[#1c2a3b] p-5"
+              >
+                <p className="text-sm font-medium text-blue-300">Loja</p>
+                <h3 className="mt-2 text-lg font-semibold text-white">{store.nome}</h3>
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Button
@@ -118,7 +122,7 @@ function Stores() {
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+            <div className="rounded-2xl border border-dashed border-white/15 bg-[#1c2a3b] p-6 text-sm text-slate-300">
               Nenhuma loja encontrada.
             </div>
           )}

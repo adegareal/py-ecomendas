@@ -1,14 +1,21 @@
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+  CheckSquare,
+  Coins,
+  Hourglass,
+  RefreshCcw,
+  Search,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import AppShell from "../components/AppShell";
-import OrderStatusBadge from "../components/OrderStatusBadge";
 import OrderFormDialog from "../components/orders/OrderFormDialog";
 import OrderItemsPanel from "../components/orders/OrderItemsPanel";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
+import OrderListCard from "../components/orders/OrderListCard";
+import OrdersSummaryCard from "../components/orders/OrdersSummaryCard";
 import { useAppSession } from "../hooks/useAppSession";
-import { formatCurrency, formatDate } from "../lib/formatters";
+import { pedidoStatusOptions } from "../lib/constants";
+import { formatCurrency } from "../lib/formatters";
 import {
   createOrder,
   createOrderItem,
@@ -28,6 +35,7 @@ function Orders() {
   const [items, setItems] = useState<ItemPedido[]>([]);
   const [stores, setStores] = useState<Loja[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<Pedido | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -60,183 +68,226 @@ function Orders() {
     void loadData();
   }, [session]);
 
+  const totals = useMemo(() => {
+    const uniqueClients = new Set(orders.map((order) => order.cliente.trim().toLowerCase()));
+    const itemsTotal = items.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+    const feesTotal = orders.reduce((sum, order) => sum + Number(order.taxa || 0), 0);
+    const pendingCount = orders.filter((order) => order.status !== "Entregue").length;
+    const deliveredCount = orders.filter((order) => order.status === "Entregue").length;
+
+    return {
+      clients: uniqueClients.size,
+      total: itemsTotal + feesTotal,
+      fees: feesTotal,
+      pending: pendingCount,
+      delivered: deliveredCount,
+    };
+  }, [items, orders]);
+
   const filteredOrders = useMemo(() => {
     const term = search.trim().toLowerCase();
 
     return orders.filter((order) => {
-      if (!term) {
-        return true;
-      }
+      const relatedItems = items.filter((item) => item.pedido_id === order.id);
 
-      return (
+      const matchesSearch =
+        !term ||
         order.cliente.toLowerCase().includes(term) ||
-        order.status.toLowerCase().includes(term)
-      );
-    });
-  }, [orders, search]);
+        order.status.toLowerCase().includes(term) ||
+        relatedItems.some(
+          (item) =>
+            item.encomenda.toLowerCase().includes(term) ||
+            item.loja.toLowerCase().includes(term)
+        );
 
-  const selectedOrder =
-    orders.find((order) => order.id === selectedOrderId) ?? filteredOrders[0] ?? null;
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [items, orders, search, statusFilter]);
+
+  const selectedOrder = filteredOrders.find((order) => order.id === selectedOrderId) ?? null;
 
   return (
     <AppShell
       title="Pedidos"
       description="Cadastre, acompanhe e organize os pedidos da empresa."
+      hidePageIntro
+      headerActions={
+        <button
+          type="button"
+          onClick={() => {
+            setEditingOrder(null);
+            setDialogOpen(true);
+          }}
+          className="inline-flex items-center justify-center rounded-xl bg-[#ffd400] px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-[#ffdf40]"
+        >
+          + Novo Pedido
+        </button>
+      }
     >
-      <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Lista de pedidos</h2>
-            <p className="mt-1 text-sm text-slate-600">Selecione um pedido para gerenciar seus itens.</p>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <OrdersSummaryCard
+          title="Clientes"
+          value={String(totals.clients)}
+          icon={UserRound}
+          dotClassName="bg-sky-400"
+        />
+        <OrdersSummaryCard
+          title="Total Geral"
+          value={formatCurrency(totals.total)}
+          icon={Coins}
+          dotClassName="bg-emerald-400"
+        />
+        <OrdersSummaryCard
+          title="Em Taxas"
+          value={formatCurrency(totals.fees)}
+          icon={Coins}
+          dotClassName="bg-violet-400"
+        />
+        <OrdersSummaryCard
+          title="Pendentes"
+          value={String(totals.pending)}
+          icon={Hourglass}
+          dotClassName="bg-amber-400"
+        />
+        <OrdersSummaryCard
+          title="Entregues"
+          value={String(totals.delivered)}
+          icon={CheckSquare}
+          dotClassName="bg-teal-400"
+        />
+      </section>
+
+      <section className="mt-5">
+        <div className="grid gap-3 md:grid-cols-[1fr_180px_56px]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar cliente, produto ou loja..."
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#223245] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
+            />
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative min-w-[260px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="pl-10"
-                placeholder="Buscar por cliente ou status"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-12 rounded-2xl border border-white/10 bg-[#223245] px-4 text-sm font-semibold text-white outline-none transition focus:border-blue-400"
+          >
+            <option value="all">Todos os status</option>
+            {pedidoStatusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
 
-            <Button
-              onClick={() => {
-                setEditingOrder(null);
-                setDialogOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Novo pedido
-            </Button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void loadData()}
+            className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/10 bg-[#223245] text-blue-300 transition hover:bg-[#2a3d53]"
+            title="Atualizar"
+            aria-label="Atualizar"
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </button>
         </div>
 
-        <div className="mt-6 grid gap-4 xl:grid-cols-2">
+        <div className="mt-4 space-y-4">
           {loading ? (
-            <p className="text-sm text-slate-600">Carregando pedidos...</p>
+            <div className="rounded-3xl border border-white/10 bg-[#223245] p-5 text-sm text-slate-300">
+              Carregando pedidos...
+            </div>
           ) : filteredOrders.length ? (
             filteredOrders.map((order) => {
-              const totalItems = items
-                .filter((item) => item.pedido_id === order.id)
-                .reduce((sum, item) => sum + Number(item.valor || 0), 0);
+              const relatedItems = items.filter((item) => item.pedido_id === order.id);
+              const totalItemsValue = relatedItems.reduce(
+                (sum, item) => sum + Number(item.valor || 0),
+                0
+              );
 
               return (
-                <button
+                <OrderListCard
                   key={order.id}
-                  onClick={() => setSelectedOrderId(order.id)}
-                  className={`rounded-3xl border p-5 text-left transition ${
-                    selectedOrder?.id === order.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{order.cliente}</h3>
-                      <p className="mt-1 text-sm text-slate-600">Data: {formatDate(order.data)}</p>
-                    </div>
+                  pedido={order}
+                  itemCount={relatedItems.length}
+                  totalValue={totalItemsValue + Number(order.taxa || 0)}
+                  selected={selectedOrderId === order.id}
+                  onSelect={() =>
+                    setSelectedOrderId((current) => (current === order.id ? null : order.id))
+                  }
+                  onEdit={() => {
+                    setEditingOrder(order);
+                    setDialogOpen(true);
+                  }}
+                  onDelete={async () => {
+                    if (!session || !window.confirm("Deseja excluir este pedido?")) {
+                      return;
+                    }
 
-                    <OrderStatusBadge status={order.status} />
-                  </div>
+                    const result = await deleteOrder(order.id, session.empresa.id);
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Itens</p>
-                      <p className="mt-1 text-base font-semibold text-slate-900">
-                        {items.filter((item) => item.pedido_id === order.id).length}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Subtotal</p>
-                      <p className="mt-1 text-base font-semibold text-slate-900">{formatCurrency(totalItems)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Taxa</p>
-                      <p className="mt-1 text-base font-semibold text-slate-900">{formatCurrency(Number(order.taxa || 0))}</p>
-                    </div>
-                  </div>
+                    if (result.error) {
+                      toast.error(result.error);
+                      return;
+                    }
 
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setEditingOrder(order);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={async (event) => {
-                        event.stopPropagation();
+                    toast.success("Pedido removido.");
 
-                        if (!session || !window.confirm("Deseja excluir este pedido?")) {
-                          return;
-                        }
+                    if (selectedOrderId === order.id) {
+                      setSelectedOrderId(null);
+                    }
 
-                        const result = await deleteOrder(order.id, session.empresa.id);
-
-                        if (result.error) {
-                          toast.error(result.error);
-                          return;
-                        }
-
-                        toast.success("Pedido removido.");
-                        if (selectedOrderId === order.id) {
-                          setSelectedOrderId(null);
-                        }
-                        await loadData();
-                      }}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </Button>
-                  </div>
-                </button>
+                    await loadData();
+                  }}
+                />
               );
             })
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+            <div className="rounded-3xl border border-dashed border-white/15 bg-[#223245] p-6 text-sm text-slate-300">
               Nenhum pedido encontrado.
             </div>
           )}
         </div>
+
+        <p className="mt-4 text-right text-sm text-blue-200">
+          {filteredOrders.length} de {orders.length} pedido(s)
+        </p>
       </section>
 
-      <div className="mt-6">
-        <OrderItemsPanel
-          pedido={selectedOrder}
-          items={items}
-          empresaId={session?.empresa.id ?? ""}
-          lojas={stores.map((store) => store.nome)}
-          onCreateItem={async (values) => {
-            const result = await createOrderItem(values);
-            if (!result.error) {
-              await loadData();
-            }
-            return result;
-          }}
-          onUpdateItem={async (id, values) => {
-            const result = await updateOrderItem(id, session?.empresa.id ?? "", values);
-            if (!result.error) {
-              await loadData();
-            }
-            return result;
-          }}
-          onDeleteItem={async (id) => {
-            const result = await deleteOrderItem(id, session?.empresa.id ?? "");
-            if (!result.error) {
-              await loadData();
-            }
-            return result;
-          }}
-        />
-      </div>
+      {selectedOrder ? (
+        <div className="mt-6">
+          <OrderItemsPanel
+            pedido={selectedOrder}
+            items={items}
+            empresaId={session?.empresa.id ?? ""}
+            lojas={stores.map((store) => store.nome)}
+            onCreateItem={async (values) => {
+              const result = await createOrderItem(values);
+              if (!result.error) {
+                await loadData();
+              }
+              return result;
+            }}
+            onUpdateItem={async (id, values) => {
+              const result = await updateOrderItem(id, session?.empresa.id ?? "", values);
+              if (!result.error) {
+                await loadData();
+              }
+              return result;
+            }}
+            onDeleteItem={async (id) => {
+              const result = await deleteOrderItem(id, session?.empresa.id ?? "");
+              if (!result.error) {
+                await loadData();
+              }
+              return result;
+            }}
+          />
+        </div>
+      ) : null}
 
       <OrderFormDialog
         open={dialogOpen}

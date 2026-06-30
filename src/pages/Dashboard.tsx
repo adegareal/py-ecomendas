@@ -9,7 +9,7 @@ import { formatCurrency, formatDate } from "../lib/formatters";
 import { listOrderItems, listOrders } from "../lib/orders";
 import { listStores } from "../lib/stores";
 import { listUsers } from "../lib/users";
-import type { ItemPedido, Loja, Pedido, AppUser } from "../types/app";
+import type { AppUser, ItemPedido, Loja, Pedido } from "../types/app";
 
 function Dashboard() {
   const { session } = useAppSession();
@@ -96,28 +96,32 @@ function Dashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Pedidos recentes</h2>
-              <p className="mt-1 text-sm text-slate-600">Acompanhe os últimos pedidos da empresa.</p>
+              <h2 className="text-lg font-semibold text-white">Pedidos recentes</h2>
+              <p className="mt-1 text-sm text-slate-300">
+                Acompanhe os últimos pedidos da empresa.
+              </p>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
             {loading ? (
-              <p className="text-sm text-slate-600">Carregando dados...</p>
+              <p className="text-sm text-slate-300">Carregando dados...</p>
             ) : orders.length ? (
               orders.slice(0, 6).map((order) => (
-                <div key={order.id} className="rounded-2xl border border-slate-200 p-4">
+                <div key={order.id} className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="font-semibold text-slate-900">{order.cliente}</h3>
-                      <p className="mt-1 text-sm text-slate-600">Data: {formatDate(order.data)}</p>
+                      <h3 className="font-semibold text-white">{order.cliente}</h3>
+                      <p className="mt-1 text-sm text-slate-300">
+                        Data: {formatDate(order.data)}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <OrderStatusBadge status={order.status} />
-                      <span className="text-sm font-semibold text-slate-900">
+                      <span className="text-sm font-bold text-emerald-400">
                         {formatCurrency(Number(order.taxa || 0))}
                       </span>
                     </div>
@@ -125,24 +129,24 @@ function Dashboard() {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-600">Nenhum pedido cadastrado ainda.</p>
+              <p className="text-sm text-slate-300">Nenhum pedido cadastrado ainda.</p>
             )}
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900">Informações da sessão</h2>
+        <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-white">Informações da sessão</h2>
           <div className="mt-6 space-y-4">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-500">Empresa</p>
-              <p className="mt-2 text-lg font-bold text-slate-900">{session?.empresa.nome}</p>
-              <p className="mt-1 text-sm text-slate-600">Slug: {session?.empresa.slug}</p>
+            <div className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
+              <p className="text-sm font-medium text-slate-300">Empresa</p>
+              <p className="mt-2 text-lg font-bold text-white">{session?.empresa.nome}</p>
+              <p className="mt-1 text-sm text-blue-200">Slug: {session?.empresa.slug}</p>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-500">Usuário</p>
-              <p className="mt-2 text-lg font-bold text-slate-900">{session?.usuario.nome}</p>
-              <p className="mt-1 text-sm text-slate-600">@{session?.usuario.username}</p>
-              <p className="mt-1 text-sm text-slate-600">Nível: {session?.usuario.nivel}</p>
+            <div className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
+              <p className="text-sm font-medium text-slate-300">Usuário</p>
+              <p className="mt-2 text-lg font-bold text-white">{session?.usuario.nome}</p>
+              <p className="mt-1 text-sm text-blue-200">@{session?.usuario.username}</p>
+              <p className="mt-1 text-sm text-slate-300">Nível: {session?.usuario.nivel}</p>
             </div>
           </div>
         </section>

@@ -1,36 +1,35 @@
-import { useState, type ReactNode } from "react";
-import SidebarNav from "./SidebarNav";
-import TopBar from "./TopBar";
+import type { ReactNode } from "react";
+import AppHeader from "./AppHeader";
 
 type AppShellProps = {
   title: string;
   description: string;
   children: ReactNode;
+  headerActions?: ReactNode;
+  hidePageIntro?: boolean;
 };
 
-function AppShell({ title, description, children }: AppShellProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
+function AppShell({
+  title,
+  description,
+  children,
+  headerActions,
+  hidePageIntro = false,
+}: AppShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-7xl">
-        <aside className="hidden w-72 shrink-0 lg:block">
-          <SidebarNav />
-        </aside>
+    <div className="min-h-screen bg-[#142436] text-white">
+      <AppHeader actions={headerActions} />
 
-        <div className="flex min-h-screen flex-1 flex-col">
-          <TopBar title={title} description={description} onOpenMenu={() => setMobileOpen(true)} />
-          <main className="flex-1 p-4 sm:p-6">{children}</main>
-        </div>
-      </div>
-
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/50 lg:hidden">
-          <div className="h-full w-72">
-            <SidebarNav onNavigate={() => setMobileOpen(false)} />
+      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-8">
+        {hidePageIntro ? null : (
+          <div className="mb-6 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-sm">
+            <h2 className="text-2xl font-bold tracking-tight text-white">{title}</h2>
+            <p className="mt-2 text-sm text-slate-300">{description}</p>
           </div>
-        </div>
-      ) : null}
+        )}
+
+        {children}
+      </main>
     </div>
   );
 }

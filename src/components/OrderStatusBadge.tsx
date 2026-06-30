@@ -11,7 +11,7 @@ const styles: Record<string, string> = {
   Pago: "bg-emerald-100 text-emerald-700",
   Enviado: "bg-violet-100 text-violet-700",
   Recebido: "bg-cyan-100 text-cyan-700",
-  Entregue: "bg-slate-200 text-slate-700",
+  Entregue: "bg-emerald-200 text-emerald-800",
   Comprado: "bg-indigo-100 text-indigo-700",
   "Em trânsito": "bg-fuchsia-100 text-fuchsia-700",
   viewer: "bg-slate-200 text-slate-700",
@@ -23,7 +23,7 @@ function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+        "inline-flex rounded-full px-3 py-1 text-xs font-bold",
         styles[status] ?? "bg-slate-100 text-slate-700"
       )}
     >

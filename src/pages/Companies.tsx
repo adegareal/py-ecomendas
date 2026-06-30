@@ -5,8 +5,8 @@ import { Navigate } from "react-router-dom";
 import AppShell from "../components/AppShell";
 import CompanyFormDialog from "../components/companies/CompanyFormDialog";
 import OrderStatusBadge from "../components/OrderStatusBadge";
-import Button from "../components/ui/Button";
 import UserFormDialog from "../components/users/UserFormDialog";
+import Button from "../components/ui/Button";
 import { useAppSession } from "../hooks/useAppSession";
 import { isSuperAdminSession } from "../lib/access";
 import { createCompany, listCompanies, updateCompany } from "../lib/companies";
@@ -96,12 +96,12 @@ function Companies() {
       description="Cadastre empresas e gerencie os usuários de cada tenant."
     >
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-600">Empresas</p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">Tenants cadastrados</h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="text-sm font-semibold text-blue-300">Empresas</p>
+              <h2 className="mt-1 text-xl font-bold text-white">Tenants cadastrados</h2>
+              <p className="mt-1 text-sm text-slate-300">
                 Cada empresa usa seu próprio slug para entrar no sistema.
               </p>
             </div>
@@ -119,7 +119,7 @@ function Companies() {
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {loadingCompanies ? (
-              <p className="text-sm text-slate-600">Carregando empresas...</p>
+              <p className="text-sm text-slate-300">Carregando empresas...</p>
             ) : companies.length ? (
               companies.map((company) => (
                 <button
@@ -127,18 +127,18 @@ function Companies() {
                   onClick={() => setSelectedCompanyId(company.id)}
                   className={`rounded-3xl border p-5 text-left transition ${
                     selectedCompanyId === company.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-200 bg-white hover:border-slate-300"
+                      ? "border-blue-400 bg-[#26384d]"
+                      : "border-white/10 bg-[#1c2a3b] hover:border-white/20"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-medium text-blue-600">Empresa</p>
-                      <h3 className="mt-2 text-lg font-semibold text-slate-900">{company.nome}</h3>
-                      <p className="mt-1 text-sm text-slate-600">Slug: {company.slug}</p>
+                      <p className="text-sm font-medium text-blue-300">Empresa</p>
+                      <h3 className="mt-2 text-lg font-semibold text-white">{company.nome}</h3>
+                      <p className="mt-1 text-sm text-slate-300">Slug: {company.slug}</p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+                    <div className="rounded-2xl bg-white/10 p-3 text-slate-200">
                       <Building2 className="h-5 w-5" />
                     </div>
                   </div>
@@ -159,21 +159,21 @@ function Companies() {
                 </button>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+              <div className="rounded-2xl border border-dashed border-white/15 bg-[#1c2a3b] p-6 text-sm text-slate-300">
                 Nenhuma empresa cadastrada ainda.
               </div>
             )}
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-600">Usuários da empresa</p>
-              <h2 className="mt-1 text-xl font-bold text-slate-900">
+              <p className="text-sm font-semibold text-blue-300">Usuários da empresa</p>
+              <h2 className="mt-1 text-xl font-bold text-white">
                 {selectedCompany?.nome ?? "Selecione uma empresa"}
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-slate-300">
                 Cadastre e ajuste os acessos do tenant selecionado.
               </p>
             </div>
@@ -192,21 +192,21 @@ function Companies() {
 
           <div className="mt-6 space-y-4">
             {!selectedCompany ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+              <div className="rounded-2xl border border-dashed border-white/15 bg-[#1c2a3b] p-6 text-sm text-slate-300">
                 Escolha uma empresa para visualizar os usuários dela.
               </div>
             ) : loadingUsers ? (
-              <p className="text-sm text-slate-600">Carregando usuários...</p>
+              <p className="text-sm text-slate-300">Carregando usuários...</p>
             ) : users.length ? (
               users.map((user) => (
-                <div key={user.id} className="rounded-2xl border border-slate-200 p-4">
+                <div key={user.id} className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
                         <Users2 className="h-4 w-4 text-slate-400" />
-                        <h3 className="text-base font-semibold text-slate-900">{user.nome}</h3>
+                        <h3 className="text-base font-semibold text-white">{user.nome}</h3>
                       </div>
-                      <p className="mt-1 text-sm text-slate-600">@{user.username}</p>
+                      <p className="mt-1 text-sm text-blue-200">@{user.username}</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -226,7 +226,7 @@ function Companies() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-600">
+              <div className="rounded-2xl border border-dashed border-white/15 bg-[#1c2a3b] p-6 text-sm text-slate-300">
                 Esta empresa ainda não possui usuários cadastrados.
               </div>
             )}
