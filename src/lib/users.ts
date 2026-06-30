@@ -1,0 +1,72 @@
+import { supabase } from "../integrations/supabase/client";
+import type { AppUser, ServiceResult } from "../types/app";
+
+type UserPayload = {
+  nome: string;
+  username: string;
+  senha?: string;
+  nivel: string;
+  role: string;
+  empresa_id: string;
+};
+
+export async function listUsers(empresaId: string): Promise<ServiceResult<AppUser[]>> {
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("id, username, nome, role, created_at, empresa_id, nivel")
+    .eq("empresa_id", empresaId)
+    .order("nome", { ascending: true });
+
+  return {
+    data: data ?? [],
+    error: error ? "Não foi possível carregar os usuários." : null,
+  };
+}
+
+export async function createUser(payload: UserPayload): Promise<ServiceResult<AppUser>> {
+  const { data, error } = await supabase
+    .from("usuarios")
+    .insert(payload)
+    .select("id, username, nome, role, created_at, empresa_id, nivel")
+    .single<AppUser>();
+
+  return {
+    data: data ?? null,
+    error: error ? "Não foi possível criar o usuário." : null,
+  };
+}
+
+export async function updateUser(
+  id: string,
+  empresaId: string,
+  payload: Omit<UserPayload, "empresa_id">
+): Promise<ServiceResult<AppUser>> {
+  const { data, error } = await supabase
+    .from("usuarios")
+    .update(payload)
+    .eq("id", id)
+    .eq("empresa_id", empresaId)
+    .select("id, username, nome, role, created_at, empresa_id, nivel")
+    .single<AppUser>();
+
+  return {
+    data: data ?? null,
+    error: error ? "Não foi possível atualizar o usuário." : null,
+  };
+}
+
+export async function deleteUser(
+  id: string,
+  empresaId: string
+): Promise<ServiceResult<boolean>> {
+  const { error } = await supabase
+    .from("usuarios")
+    .delete()
+    .eq("id", id)
+    .eq("empresa_id", empresaId);
+
+  return {
+    data: !error,
+    error: error ? "Não foi possível remover o usuário." : null,
+  };
+}
