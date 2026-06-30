@@ -14,6 +14,9 @@ const styles: Record<string, string> = {
   Entregue: "bg-slate-200 text-slate-700",
   Comprado: "bg-indigo-100 text-indigo-700",
   "Em trânsito": "bg-fuchsia-100 text-fuchsia-700",
+  viewer: "bg-slate-200 text-slate-700",
+  admin_empresa: "bg-blue-100 text-blue-700",
+  super_admin: "bg-purple-100 text-purple-700",
 };
 
 function OrderStatusBadge({ status }: OrderStatusBadgeProps) {

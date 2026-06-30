@@ -1,4 +1,4 @@
-import { Home, LogOut, Package, Store, Users } from "lucide-react";
+import { Building2, Home, LogOut, Package, Store, Users } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppSession } from "../hooks/useAppSession";
@@ -8,16 +8,19 @@ type SidebarNavProps = {
   onNavigate?: () => void;
 };
 
-const items = [
-  { to: "/painel", label: "Painel", icon: Home },
-  { to: "/pedidos", label: "Pedidos", icon: Package },
-  { to: "/lojas", label: "Lojas", icon: Store },
-  { to: "/usuarios", label: "Usuários", icon: Users },
-];
-
 function SidebarNav({ onNavigate }: SidebarNavProps) {
   const navigate = useNavigate();
   const { session, signOut } = useAppSession();
+
+  const items = [
+    { to: "/painel", label: "Painel", icon: Home },
+    ...(session?.usuario.nivel === "super_admin"
+      ? [{ to: "/empresas", label: "Empresas", icon: Building2 }]
+      : []),
+    { to: "/pedidos", label: "Pedidos", icon: Package },
+    { to: "/lojas", label: "Lojas", icon: Store },
+    { to: "/usuarios", label: "Usuários", icon: Users },
+  ];
 
   return (
     <div className="flex h-full flex-col rounded-none bg-slate-950 text-white lg:rounded-r-3xl">
@@ -25,7 +28,9 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
         <p className="text-sm font-semibold text-blue-300">{session?.empresa.nome}</p>
         <h2 className="mt-1 text-2xl font-bold">PY Encomendas</h2>
         <p className="mt-3 text-sm text-slate-300">{session?.usuario.nome}</p>
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{session?.usuario.nivel}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+          {session?.usuario.nivel}
+        </p>
       </div>
 
       <nav className="flex flex-1 flex-col gap-2 p-4">
@@ -37,7 +42,9 @@ function SidebarNav({ onNavigate }: SidebarNavProps) {
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition",
-                isActive ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                isActive
+                  ? "bg-white text-slate-950"
+                  : "text-slate-300 hover:bg-white/10 hover:text-white"
               )
             }
           >

@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import Stores from "./pages/Stores";
 import Users from "./pages/Users";
+import Companies from "./pages/Companies";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/painel" element={<Dashboard />} />
+        <Route path="/empresas" element={<Companies />} />
         <Route path="/pedidos" element={<Orders />} />
         <Route path="/lojas" element={<Stores />} />
         <Route path="/usuarios" element={<Users />} />
