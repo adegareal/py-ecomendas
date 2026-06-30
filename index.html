@@ -1,83 +1,13 @@
-...
-            {showUsuarios&&canManageUsers&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
-          <div style={{background:"#13243A",borderRadius:18,padding:24,width:"100%",maxWidth:520,border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 24px 60px rgba(0,0,0,0.6)",maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{color:"#fff",fontSize:17,fontWeight:800,marginBottom:4}}>👥 Gerenciar Usuários</div>
-            <div style={{color:"#8BAED4",fontSize:13,marginBottom:14}}>{isSuperAdmin?"Cadastre usuários para qualquer empresa.":"Cadastre usuários apenas para a sua empresa."}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-              <input placeholder="Nome completo" value={novoUsuario.nome} onChange={e=>setNovoUsuario(v=>({...v,nome:e.target.value}))} style={inp}/>
-              <input placeholder="Usuário" value={novoUsuario.username} onChange={e=>setNovoUsuario(v=>({...v,username:e.target.value}))} style={inp}/>
-              <input type="password" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario(v=>({...v,senha:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&createUsuario()} style={inp}/>
-              {isSuperAdmin
-                ?<select value={novoUsuario.empresaId} onChange={e=>setNovoUsuario(v=>({...v,empresaId:e.target.value}))} style={sel}>{empresas.map(empresa=><option key={empresa.id} value={empresa.id}>{empresa.nome}</option>)}</select>
-                :<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",borderRadius:10,padding:"10px 12px",color:"#C5D8F0",fontSize:13}}>Empresa: <strong>{activeEmpresa?.nome}</strong></div>}
-              <select value={novoUsuario.nivel} onChange={e=>setNovoUsuario(v=>({...v,nivel:e.target.value}))} style={sel}>
-                <option value="viewer">Visualizador</option>
-                <option value="operador">Operador</option>
-                <option value="manager">Gerente</option>
-                <option value="admin_empresa">Admin Empresa</option>
-              </select>
-              <button onClick={createUsuario} disabled={savingUser} style={{...btnP,flex:"none",opacity:savingUser?0.7:1}}>{savingUser?"Criando usuário...":"+ Adicionar usuário"}</button>
-            </div>
-            {usuarios.length===0
-              ?<div style={{textAlign:"center",color:"#5A7A99",padding:"18px 0"}}>Nenhum usuário cadastrado nesta empresa.</div>
-              :<div style={{display:"flex",flexDirection:"column",gap:6}}>{usuarios.map(usuario=>(
-                  <div key={usuario.id} style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-                    <div>
-                      <div style={{color:"#fff",fontWeight:700,fontSize:13}}>{usuario.nome}</div>
-                      <div style={{color:"#8BAED4",fontSize:12}}>@{usuario.username}{isSuperAdmin&&usuario.empresas?.nome?` · ${usuario.empresas.nome}`:""}</div>
-                    </div>
-                    <span style={{background:usuario.nivel==="super_admin"?"rgba(255,215,0,0.15)":usuario.nivel==="admin_empresa"?"rgba(0,82,204,0.25)":"rgba(255,255,255,0.08)",color:usuario.nivel==="super_admin"?"#FFD700":usuario.nivel==="admin_empresa"?"#90B4E8":"#C5D8F0",border:"1px solid rgba(255,255,255,0.15)",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700}}>{getNivelLabel(usuario.nivel)}</span>
-                    {isSuperAdmin&&<>
-                        <button onClick={()=>{setEditUsuario(usuario); setShowEditUser(true);}} style={{background:"rgba(0,82,204,0.3)",border:"1px solid rgba(0,82,204,0.5)",color:"#90B4E8",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",fontWeight:600}}>✏️</button>
-                        <button onClick={()=>setConfirmDeleteUsuario(usuario.id)} style={{background:"rgba(220,53,69,0.2)",border:"1px solid rgba(220,53,69,0.4)",color:"#FF6B7A",borderRadius:6,padding:"4px 8px",fontSize:11,cursor:"pointer",fontWeight:600}}>🗑️</button>
-                    </>}
-                  </div>
-                ))}</div>
-            }
-...
-{showEditUser && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 12 }}>
-          <div style={{ background: '#13243A', borderRadius: 18, padding: 22, width: '100%', maxWidth: 500, border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', maxHeight: '94vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ color: '#fff', fontSize: 17, fontWeight: 800 }}>Editar Usuário</div>
-            <div>
-              <label style={lbl}>Nome</label>
-              <input value={editUsuario?.nome || ''} onChange={e => setEditUsuario({ ...editUsuario, nome: e.target.value })} style={inp} />
-            </div>
-            <div>
-              <label style={lbl}>Usuário</label>
-              <input value={editUsuario?.username || ''} onChange={e => setEditUsuario({ ...editUsuario, username: e.target.value })} style={inp} />
-            </div>
-            <div>
-              <label style={lbl}>Nível</label>
-              <select value={editUsuario?.nivel || 'viewer'} onChange={e => setEditUsuario({ ...editUsuario, nivel: e.target.value })} style={sel}>
-                <option value="viewer">Visualizador</option>
-                <option value="operador">Operador</option>
-                <option value="manager">Gerente</option>
-                <option value="admin_empresa">Admin Empresa</option>
-                <option value="super_admin">Super Admin</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowEditUser(false)} style={btnG}>Cancelar</button>
-              <button onClick={updateUsuario} disabled={savingUser} style={{ ...btnP, opacity: savingUser ? 0.7 : 1 }}>{savingUser ? "Salvando..." : "Salvar"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {confirmDeleteUsuario !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div style={{ background: '#13243A', borderRadius: 16, padding: 26, width: 310, border: '1px solid rgba(220,53,69,0.3)', textAlign: 'center' }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>🗑️</div>
-            <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Excluir usuário?</div>
-            <div style={{ color: '#8BAED4', fontSize: 13, marginBottom: 20 }}>Esta ação é irreversível.</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setConfirmDeleteUsuario(null)} style={btnG}>Cancelar</button>
-              <button onClick={() => deleteUsuario(confirmDeleteUsuario)} style={{ ...btnP, background: '#DC3545' }}>Excluir</button>
-            </div>
-          </div>
-        </div>
-      )}
-...
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App Encomendas</title>
+    <meta name="description" content="Sistema de encomendas" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
