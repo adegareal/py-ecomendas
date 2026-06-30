@@ -1,6 +1,6 @@
-import { LogOut, Package, Store, Users } from "lucide-react";
+import { LogOut, Package } from "lucide-react";
 import type { ReactNode } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppSession } from "../hooks/useAppSession";
 
@@ -15,14 +15,8 @@ const roleLabels: Record<string, string> = {
 };
 
 function AppHeader({ actions }: AppHeaderProps) {
-  const location = useLocation();
   const navigate = useNavigate();
   const { session, signOut } = useAppSession();
-
-  const navItems = [
-    { to: "/usuarios", label: "Usuários", icon: Users },
-    { to: "/lojas", label: "Lojas", icon: Store },
-  ].filter((item) => item.to !== location.pathname);
 
   const userName = session?.usuario.nome ?? "Usuário";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -49,17 +43,6 @@ function AppHeader({ actions }: AppHeaderProps) {
         </button>
 
         <div className="flex flex-wrap items-center gap-3">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </NavLink>
-          ))}
-
           {actions}
 
           <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2 text-left">

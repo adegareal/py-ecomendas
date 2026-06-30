@@ -3,11 +3,15 @@ import {
   Coins,
   Hourglass,
   Search,
+  Store,
   UserRound,
+  Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import AppShell from "../components/AppShell";
+import StoresDialog from "../components/dashboard/StoresDialog";
+import UsersDialog from "../components/dashboard/UsersDialog";
 import OrderFormDialog from "../components/orders/OrderFormDialog";
 import OrderItemsDialog from "../components/orders/OrderItemsDialog";
 import OrderListCard from "../components/orders/OrderListCard";
@@ -37,6 +41,8 @@ function Dashboard() {
   const [viewingOrder, setViewingOrder] = useState<Pedido | null>(null);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
+  const [storesDialogOpen, setStoresDialogOpen] = useState(false);
+  const [usersDialogOpen, setUsersDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -110,16 +116,36 @@ function Dashboard() {
       description="Resumo rápido da operação atual da empresa."
       hidePageIntro
       headerActions={
-        <button
-          type="button"
-          onClick={() => {
-            setEditingOrder(null);
-            setOrderDialogOpen(true);
-          }}
-          className="inline-flex items-center justify-center rounded-xl bg-[#ffd400] px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-[#ffdf40]"
-        >
-          + Novo Pedido
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setUsersDialogOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+          >
+            <Users className="h-4 w-4" />
+            Usuários
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStoresDialogOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+          >
+            <Store className="h-4 w-4" />
+            Lojas
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEditingOrder(null);
+              setOrderDialogOpen(true);
+            }}
+            className="inline-flex items-center justify-center rounded-xl bg-[#ffd400] px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-[#ffdf40]"
+          >
+            + Novo Pedido
+          </button>
+        </>
       }
     >
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -229,6 +255,9 @@ function Dashboard() {
           {filteredOrders.length} de {orders.length} pedido(s)
         </p>
       </section>
+
+      <UsersDialog open={usersDialogOpen} onClose={() => setUsersDialogOpen(false)} />
+      <StoresDialog open={storesDialogOpen} onClose={() => setStoresDialogOpen(false)} />
 
       <OrderItemsDialog
         open={itemsDialogOpen}
