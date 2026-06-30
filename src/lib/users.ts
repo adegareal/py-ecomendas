@@ -48,23 +48,19 @@ export async function updateUser(
   _currentEmpresaId: string,
   payload: UserPayload
 ): Promise<ServiceResult<AppUser>> {
-  const updatePayload = {
-    nome: payload.nome,
-    username: payload.username,
-    nivel: payload.nivel,
-    empresa_id: payload.empresa_id,
-    ...(payload.senha ? { senha: payload.senha } : {}),
-  };
-
-  const { data, error } = await supabase
-    .from("usuarios")
-    .update(updatePayload)
-    .eq("id", id)
-    .select("id, username, nome, role, created_at, empresa_id, nivel")
-    .single<AppUser>();
+  const { data, error } = await supabase.functions.invoke("update-usuario", {
+    body: {
+      id,
+      nome: payload.nome,
+      username: payload.username,
+      senha: payload.senha,
+      nivel: payload.nivel,
+      empresa_id: payload.empresa_id,
+    },
+  });
 
   return {
-    data: data ?? null,
+    data: (data as AppUser | null) ?? null,
     error: error ? "Não foi possível atualizar o usuário." : null,
   };
 }
