@@ -93,7 +93,6 @@ serve(async (req) => {
         nome: DEFAULT_SUPER_ADMIN_NAME,
         senha: DEFAULT_SUPER_ADMIN_PASSWORD,
         nivel: DEFAULT_DATABASE_LEVEL,
-        role: DEFAULT_DATABASE_LEVEL,
         empresa_id: company.id,
       })
       .eq("id", existingUser.id)
@@ -115,7 +114,6 @@ serve(async (req) => {
       username: DEFAULT_SUPER_ADMIN_USERNAME,
       senha: DEFAULT_SUPER_ADMIN_PASSWORD,
       nivel: DEFAULT_DATABASE_LEVEL,
-      role: DEFAULT_DATABASE_LEVEL,
       empresa_id: company.id,
     });
 

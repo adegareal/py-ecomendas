@@ -17,7 +17,6 @@ type UserFormDialogProps = {
     username: string;
     senha?: string;
     nivel: string;
-    role: string;
     empresa_id: string;
   }) => Promise<ServiceResult<AppUser>>;
 };
@@ -65,7 +64,6 @@ function UserFormDialog({ open, usuario, empresaId, onClose, onSubmit }: UserFor
             username: username.trim().toLowerCase(),
             senha: senha || undefined,
             nivel,
-            role: nivel,
             empresa_id: empresaId,
           });
 

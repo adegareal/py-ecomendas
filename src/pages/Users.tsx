@@ -151,7 +151,6 @@ function Users() {
                 username: values.username,
                 senha: values.senha,
                 nivel: values.nivel,
-                role: values.role,
               })
             : await createUser(values);
 

@@ -6,7 +6,6 @@ type UserPayload = {
   username: string;
   senha?: string;
   nivel: string;
-  role: string;
   empresa_id: string;
 };
 
@@ -24,9 +23,17 @@ export async function listUsers(empresaId: string): Promise<ServiceResult<AppUse
 }
 
 export async function createUser(payload: UserPayload): Promise<ServiceResult<AppUser>> {
+  const insertPayload = {
+    nome: payload.nome,
+    username: payload.username,
+    senha: payload.senha,
+    nivel: payload.nivel,
+    empresa_id: payload.empresa_id,
+  };
+
   const { data, error } = await supabase
     .from("usuarios")
-    .insert(payload)
+    .insert(insertPayload)
     .select("id, username, nome, role, created_at, empresa_id, nivel")
     .single<AppUser>();
 
@@ -41,9 +48,16 @@ export async function updateUser(
   empresaId: string,
   payload: Omit<UserPayload, "empresa_id">
 ): Promise<ServiceResult<AppUser>> {
+  const updatePayload = {
+    nome: payload.nome,
+    username: payload.username,
+    nivel: payload.nivel,
+    ...(payload.senha ? { senha: payload.senha } : {}),
+  };
+
   const { data, error } = await supabase
     .from("usuarios")
-    .update(payload)
+    .update(updatePayload)
     .eq("id", id)
     .eq("empresa_id", empresaId)
     .select("id, username, nome, role, created_at, empresa_id, nivel")
