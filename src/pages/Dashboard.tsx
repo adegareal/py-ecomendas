@@ -1,4 +1,5 @@
 import {
+  Building2,
   CheckSquare,
   Coins,
   Hourglass,
@@ -11,12 +12,14 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import AppShell from "../components/AppShell";
 import StoresDialog from "../components/dashboard/StoresDialog";
+import SuperAdminDialog from "../components/dashboard/SuperAdminDialog";
 import UsersDialog from "../components/dashboard/UsersDialog";
 import OrderFormDialog from "../components/orders/OrderFormDialog";
 import OrderItemsDialog from "../components/orders/OrderItemsDialog";
 import OrderListCard from "../components/orders/OrderListCard";
 import OrdersSummaryCard from "../components/orders/OrdersSummaryCard";
 import { useAppSession } from "../hooks/useAppSession";
+import { isSuperAdminSession } from "../lib/access";
 import { formatCurrency } from "../lib/formatters";
 import {
   createOrder,
@@ -43,7 +46,10 @@ function Dashboard() {
   const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
   const [storesDialogOpen, setStoresDialogOpen] = useState(false);
   const [usersDialogOpen, setUsersDialogOpen] = useState(false);
+  const [superAdminDialogOpen, setSuperAdminDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const isSuperAdmin = isSuperAdminSession(session);
 
   async function loadData() {
     if (!session) {
@@ -117,6 +123,17 @@ function Dashboard() {
       hidePageIntro
       headerActions={
         <>
+          {isSuperAdmin ? (
+            <button
+              type="button"
+              onClick={() => setSuperAdminDialogOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              <Building2 className="h-4 w-4" />
+              Empresas
+            </button>
+          ) : null}
+
           <button
             type="button"
             onClick={() => setUsersDialogOpen(true)}
@@ -255,6 +272,10 @@ function Dashboard() {
           {filteredOrders.length} de {orders.length} pedido(s)
         </p>
       </section>
+
+      {isSuperAdmin ? (
+        <SuperAdminDialog open={superAdminDialogOpen} onClose={() => setSuperAdminDialogOpen(false)} />
+      ) : null}
 
       <UsersDialog open={usersDialogOpen} onClose={() => setUsersDialogOpen(false)} />
       <StoresDialog open={storesDialogOpen} onClose={() => setStoresDialogOpen(false)} />
