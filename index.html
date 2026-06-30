@@ -22,7 +22,7 @@ const { useState, useEffect, useMemo, useCallback } = React;
 
 // ── SUPABASE CONFIG ──
 const SUPA_URL = "https://sisnsawccgnsttbxnobm.supabase.co";
-const SUPA_KEY = "sb_publishable_uyV6LDZfy8Z0FiqYk0q8vg_yzouR1p0";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpc25zYXdjY2duc3R0Ynhub2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NDgxMTgsImV4cCI6MjA5ODMyNDExOH0.0y38nM3wiHih-Yqx5zpd0qBl5RO8biKoCo2PWk6zWHk";
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 const STATUS = ["Pendente","Em trânsito","Entregue","Cancelado"];
@@ -47,38 +47,7 @@ const lbl  = {color:"#8BAED4",fontSize:12,fontWeight:700,display:"block",marginB
 const btnP = {flex:1,padding:"11px",borderRadius:8,border:"none",background:"linear-gradient(90deg,#003580,#0052CC)",color:"#fff",fontSize:15,cursor:"pointer",fontWeight:700};
 const btnG = {flex:1,padding:"11px",borderRadius:8,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#8BAED4",fontSize:15,cursor:"pointer",fontWeight:600};
 const emptyItem = loja => ({id:uid(),encomenda:"",valor:"",loja,itemStatus:"Aguardando pagamento"});
-const LOCAL_USERS_KEY = "py-encomendas-local-users";
-
 const norm = v => v.trim();
-const getLocalUsers = () => {
-  try {
-    const raw = localStorage.getItem(LOCAL_USERS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-const saveLocalUsers = users => localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
-const hashPassword = async password => {
-  const data = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hashBuffer)).map(byte => byte.toString(16).padStart(2, "0")).join("");
-};
-const findLocalUser = username => getLocalUsers().find(item => item.username.toLowerCase() === username.toLowerCase());
-const createLocalUser = async ({ nome, username, senha }) => {
-  const users = getLocalUsers();
-  const senhaHash = await hashPassword(senha);
-  const newUser = { id:`local-${uid()}`, nome, username, senhaHash, role:"viewer", source:"local" };
-  saveLocalUsers([...users, newUser]);
-  return newUser;
-};
-const authenticateLocalUser = async (username, senha) => {
-  const user = findLocalUser(username);
-  if(!user) return null;
-  const senhaHash = await hashPassword(senha);
-  return user.senhaHash === senhaHash ? user : null;
-};
 
 /* ══ LOGIN ══ */
 function Login({onLogin}) {
@@ -100,30 +69,34 @@ function Login({onLogin}) {
     setLoading(true); setErro(""); setOkMsg("");
     try {
       const {data,error} = await sb.from("usuarios").select("*").eq("username",username).eq("senha",pass).single();
-      if(!error&&data){ onLogin(data); setLoading(false); return; }
-      const localUser = await authenticateLocalUser(username, pass);
-      if(localUser) onLogin(localUser);
-      else setErro("Usuário ou senha incorretos.");
-    } catch(e){
-      const localUser = await authenticateLocalUser(username, pass);
-      if(localUser) onLogin(localUser);
-      else setErro("Erro de conexão. Tente novamente.");
-    }
+      if(error||!data) setErro("Usuário ou senha incorretos.");
+      else onLogin(data);
+    } catch(e){ setErro("Erro de conexão. Tente novamente."); }
     setLoading(false);
   };
 
   const handleCreateAccount = async () => {
     const nomeLimpo = norm(nome);
     const username = norm(novoUser);
-    if(!nomeLimpo||!username||!novaSenha.trim()) { setErro("Preencha nome, usuário e senha para criar a conta."); return; }
-    if(novaSenha.length < 4) { setErro("A senha deve ter pelo menos 4 caracteres."); return; }
-    if(findLocalUser(username)) { setErro("Este usuário já existe."); return; }
+    const senha = novaSenha.trim();
+    if(!nomeLimpo||!username||!senha) { setErro("Preencha nome, usuário e senha para criar a conta."); return; }
+    if(senha.length < 4) { setErro("A senha deve ter pelo menos 4 caracteres."); return; }
     setLoading(true); setErro(""); setOkMsg("");
     try {
-      await createLocalUser({ nome:nomeLimpo, username, senha:novaSenha });
-      setNome(""); setNovoUser(""); setNovaSenha(""); setShowCreate(false);
-      setUser(username); setPass("");
-      setOkMsg("Conta criada com sucesso. Agora faça login.");
+      const {data:existingUser,error:existingError} = await sb.from("usuarios").select("id").eq("username",username).maybeSingle();
+      if(existingError) {
+        setErro("Não foi possível verificar o usuário.");
+      } else if(existingUser) {
+        setErro("Este usuário já existe.");
+      } else {
+        const {error:createError} = await sb.from("usuarios").insert({ username, senha, nome:nomeLimpo, role:"viewer" });
+        if(createError) setErro("Não foi possível criar a conta.");
+        else {
+          setNome(""); setNovoUser(""); setNovaSenha(""); setShowCreate(false);
+          setUser(username); setPass("");
+          setOkMsg("Conta criada com sucesso. Agora faça login.");
+        }
+      }
     } catch(e) {
       setErro("Não foi possível criar a conta.");
     }
