@@ -177,10 +177,13 @@ function Main({user,onLogout}) {
   const isAdmin = user.role==="admin";
   const [pedidos,setPedidos]   = useState([]);
   const [lojas,setLojas]       = useState([]);
+  const [usuarios,setUsuarios] = useState([]);
   const [loading,setLoading]   = useState(true);
   const [saving,setSaving]     = useState(false);
+  const [savingUser,setSavingUser] = useState(false);
   const [showForm,setShowForm] = useState(false);
   const [showLojas,setShowLojas] = useState(false);
+  const [showUsuarios,setShowUsuarios] = useState(false);
   const [showDetail,setShowDetail] = useState(null);
   const [editId,setEditId]     = useState(null);
   const [search,setSearch]     = useState("");
@@ -188,6 +191,7 @@ function Main({user,onLogout}) {
   const [confirmDelete,setConfirmDelete] = useState(null);
   const [confirmDeleteLoja,setConfirmDeleteLoja] = useState(null);
   const [novaLoja,setNovaLoja] = useState("");
+  const [novoUsuario,setNovoUsuario] = useState({ nome:"", username:"", senha:"", role:"viewer" });
   const [editLojaIdx,setEditLojaIdx] = useState(null);
   const [editLojaVal,setEditLojaVal] = useState("");
   const [showLogout,setShowLogout] = useState(false);
@@ -202,12 +206,14 @@ function Main({user,onLogout}) {
   const loadAll = useCallback(async()=>{
     setLoading(true);
     try {
-      const [{data:lj},{data:ped},{data:itns}] = await Promise.all([
+      const [{data:lj},{data:ped},{data:itns},{data:usrs}] = await Promise.all([
         sb.from("lojas").select("*").order("nome"),
         sb.from("pedidos").select("*").order("created_at",{ascending:false}),
         sb.from("itens").select("*").order("created_at"),
+        sb.from("usuarios").select("id, nome, username, role").order("created_at",{ascending:false}),
       ]);
       setLojas(lj||[]);
+      setUsuarios(usrs||[]);
       const pedidosComItens = (ped||[]).map(p=>({
         ...p, taxa:Number(p.taxa)||0,
         itens:(itns||[]).filter(i=>i.pedido_id===p.id).map(i=>({...i,valor:Number(i.valor)||0,itemStatus:i.item_status}))
@@ -297,7 +303,47 @@ function Main({user,onLogout}) {
     } catch(e){ showToast("Erro ao excluir loja.","error"); }
   };
 
+  const createUsuario = async()=>{
+    const nome = norm(novoUsuario.nome);
+    const username = norm(novoUsuario.username);
+    const senha = novoUsuario.senha.trim();
+    if(!nome||!username||!senha) {
+      showToast("Preencha nome, usuário e senha.","error");
+      return;
+    }
+    if(senha.length < 4) {
+      showToast("A senha deve ter pelo menos 4 caracteres.","error");
+      return;
+    }
+    setSavingUser(true);
+    try {
+      const {data:existingUser,error:existingError} = await sb.from("usuarios").select("id").eq("username",username).maybeSingle();
+      if(existingError) {
+        showToast("Erro ao verificar usuário.","error");
+      } else if(existingUser) {
+        showToast("Este usuário já existe.","error");
+      } else {
+        const {error:createError} = await sb.from("usuarios").insert({
+          nome,
+          username,
+          senha,
+          role:novoUsuario.role,
+        });
+        if(createError) showToast("Erro ao criar usuário.","error");
+        else {
+          setNovoUsuario({ nome:"", username:"", senha:"", role:"viewer" });
+          await loadAll();
+          showToast("Usuário criado com sucesso!");
+        }
+      }
+    } catch(e) {
+      showToast("Erro ao criar usuário.","error");
+    }
+    setSavingUser(false);
+  };
+
   if(loading) return (
+
     <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0D1B2A,#1B2B3A)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
       <div style={{fontSize:40}}>🛃</div>
       <div style={{color:"#8BAED4",fontSize:15}}>Carregando dados...</div>
@@ -321,9 +367,11 @@ function Main({user,onLogout}) {
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           {isAdmin&&<>
+            <button onClick={()=>setShowUsuarios(true)} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,padding:"7px 13px",fontWeight:600,fontSize:13,cursor:"pointer"}}>👥 Usuários</button>
             <button onClick={()=>setShowLojas(true)} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",borderRadius:8,padding:"7px 13px",fontWeight:600,fontSize:13,cursor:"pointer"}}>🏪 Lojas</button>
             <button onClick={openNew} style={{background:"#FFD700",color:"#0D1B2A",border:"none",borderRadius:8,padding:"7px 15px",fontWeight:700,fontSize:13,cursor:"pointer"}}>+ Novo Pedido</button>
           </>}
+
           <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.1)",borderRadius:8,padding:"6px 12px",cursor:"pointer"}} onClick={()=>setShowLogout(true)}>
             <div style={{width:28,height:28,borderRadius:"50%",background:"#FFD700",display:"flex",alignItems:"center",justifyContent:"center",color:"#0D1B2A",fontWeight:800,fontSize:12}}>{user.nome.charAt(0)}</div>
             <span style={{color:"#fff",fontSize:13,fontWeight:600}}>{user.nome}</span>
@@ -549,6 +597,45 @@ function Main({user,onLogout}) {
               </div>
             }
             <div style={{marginTop:14}}><button onClick={()=>setShowLojas(false)} style={{...btnG,width:"100%"}}>Fechar</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL USUÁRIOS */}
+      {showUsuarios&&isAdmin&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}>
+          <div style={{background:"#13243A",borderRadius:18,padding:24,width:"100%",maxWidth:460,border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 24px 60px rgba(0,0,0,0.6)",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{color:"#fff",fontSize:17,fontWeight:800,marginBottom:4}}>👥 Gerenciar Usuários</div>
+            <div style={{color:"#8BAED4",fontSize:13,marginBottom:14}}>Cadastre novos usuários com perfil de admin ou visualizador.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
+              <input placeholder="Nome completo" value={novoUsuario.nome} onChange={e=>setNovoUsuario(v=>({...v,nome:e.target.value}))} style={inp}/>
+              <input placeholder="Usuário" value={novoUsuario.username} onChange={e=>setNovoUsuario(v=>({...v,username:e.target.value}))} style={inp}/>
+              <input type="password" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario(v=>({...v,senha:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&createUsuario()} style={inp}/>
+              <select value={novoUsuario.role} onChange={e=>setNovoUsuario(v=>({...v,role:e.target.value}))} style={sel}>
+                <option value="viewer">Visualizador</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button onClick={createUsuario} disabled={savingUser} style={{...btnP,flex:"none",opacity:savingUser?0.7:1}}>
+                {savingUser?"Criando usuário...":"+ Adicionar usuário"}
+              </button>
+            </div>
+            {usuarios.length===0
+              ?<div style={{textAlign:"center",color:"#5A7A99",padding:"18px 0"}}>Nenhum usuário cadastrado.</div>
+              :<div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {usuarios.map(usuario=>(
+                  <div key={usuario.id} style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.10)",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                    <div>
+                      <div style={{color:"#fff",fontWeight:700,fontSize:13}}>{usuario.nome}</div>
+                      <div style={{color:"#8BAED4",fontSize:12}}>@{usuario.username}</div>
+                    </div>
+                    <span style={{background:usuario.role==="admin"?"rgba(255,215,0,0.15)":"rgba(255,255,255,0.08)",color:usuario.role==="admin"?"#FFD700":"#C5D8F0",border:"1px solid rgba(255,255,255,0.15)",borderRadius:20,padding:"4px 10px",fontSize:11,fontWeight:700}}>
+                      {usuario.role==="admin"?"Admin":"Visualizador"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            }
+            <div style={{marginTop:14}}><button onClick={()=>setShowUsuarios(false)} style={{...btnG,width:"100%"}}>Fechar</button></div>
           </div>
         </div>
       )}
