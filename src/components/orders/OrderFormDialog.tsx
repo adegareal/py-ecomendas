@@ -77,9 +77,9 @@ function OrderFormDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title="" description="">
-      <div className="w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-4xl">
         <form
-          className="max-h-[85vh] overflow-y-auto rounded-[2rem] border border-slate-700 bg-slate-900 p-4 text-white sm:p-6"
+          className="rounded-[2rem] border border-slate-700 bg-slate-900 p-4 text-white sm:p-6"
           onSubmit={async (event) => {
             event.preventDefault();
 
