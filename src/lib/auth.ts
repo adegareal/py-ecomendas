@@ -1,5 +1,6 @@
 import { supabase } from "../integrations/supabase/client";
 import { setStoredSession } from "./session-storage";
+import { normalizeSessionUser } from "./access";
 import type { AppSession, AppUser, Empresa, ServiceResult } from "../types/app";
 
 export async function signInWithTenant(
@@ -40,7 +41,10 @@ export async function signInWithTenant(
     return { data: null, error: "Usuário ou senha inválidos." };
   }
 
-  const session = { empresa, usuario };
+  const session = {
+    empresa,
+    usuario: normalizeSessionUser(usuario, empresa.slug),
+  };
 
   setStoredSession(session);
 

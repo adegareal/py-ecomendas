@@ -11,6 +11,7 @@ const DEFAULT_COMPANY_SLUG = "principal";
 const DEFAULT_SUPER_ADMIN_NAME = "Super Admin";
 const DEFAULT_SUPER_ADMIN_USERNAME = "superadmin";
 const DEFAULT_SUPER_ADMIN_PASSWORD = "admin123";
+const DEFAULT_DATABASE_LEVEL = "admin_empresa";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -70,6 +71,7 @@ serve(async (req) => {
   const { data: existingUser, error: existingUserError } = await supabase
     .from("usuarios")
     .select("id")
+    .eq("empresa_id", company.id)
     .eq("username", DEFAULT_SUPER_ADMIN_USERNAME)
     .maybeSingle();
 
@@ -90,11 +92,12 @@ serve(async (req) => {
       .update({
         nome: DEFAULT_SUPER_ADMIN_NAME,
         senha: DEFAULT_SUPER_ADMIN_PASSWORD,
-        nivel: "super_admin",
-        role: "super_admin",
+        nivel: DEFAULT_DATABASE_LEVEL,
+        role: DEFAULT_DATABASE_LEVEL,
         empresa_id: company.id,
       })
-      .eq("id", existingUser.id);
+      .eq("id", existingUser.id)
+      .eq("empresa_id", company.id);
 
     if (updateUserError) {
       console.error("[bootstrap-super-admin] failed to update user", updateUserError);
@@ -111,8 +114,8 @@ serve(async (req) => {
       nome: DEFAULT_SUPER_ADMIN_NAME,
       username: DEFAULT_SUPER_ADMIN_USERNAME,
       senha: DEFAULT_SUPER_ADMIN_PASSWORD,
-      nivel: "super_admin",
-      role: "super_admin",
+      nivel: DEFAULT_DATABASE_LEVEL,
+      role: DEFAULT_DATABASE_LEVEL,
       empresa_id: company.id,
     });
 

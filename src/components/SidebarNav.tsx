@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAppSession } from "../hooks/useAppSession";
 import { cn } from "../lib/cn";
+import { isSuperAdminSession } from "../lib/access";
 
 type SidebarNavProps = {
   onNavigate?: () => void;
@@ -11,10 +12,11 @@ type SidebarNavProps = {
 function SidebarNav({ onNavigate }: SidebarNavProps) {
   const navigate = useNavigate();
   const { session, signOut } = useAppSession();
+  const isSuperAdmin = isSuperAdminSession(session);
 
   const items = [
     { to: "/painel", label: "Painel", icon: Home },
-    ...(session?.usuario.nivel === "super_admin"
+    ...(isSuperAdmin
       ? [{ to: "/empresas", label: "Empresas", icon: Building2 }]
       : []),
     { to: "/pedidos", label: "Pedidos", icon: Package },

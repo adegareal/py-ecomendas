@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState } from "react";
 import { clearStoredSession, getStoredSession } from "../../lib/session-storage";
 import { signInWithTenant } from "../../lib/auth";
+import { normalizeSession } from "../../lib/access";
 import type { AppSession, ServiceResult } from "../../types/app";
 
 type AppSessionContextValue = {
@@ -21,7 +22,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    setSession(getStoredSession());
+    setSession(normalizeSession(getStoredSession()));
     setIsReady(true);
   }, []);
 
@@ -29,7 +30,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
     const result = await signInWithTenant(empresaSlug, username, senha);
 
     if (result.data) {
-      setSession(result.data);
+      setSession(normalizeSession(result.data));
     }
 
     return result;

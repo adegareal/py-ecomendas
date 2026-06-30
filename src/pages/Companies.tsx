@@ -7,6 +7,7 @@ import CompanyFormDialog from "../components/companies/CompanyFormDialog";
 import OrderStatusBadge from "../components/OrderStatusBadge";
 import Button from "../components/ui/Button";
 import { useAppSession } from "../hooks/useAppSession";
+import { isSuperAdminSession } from "../lib/access";
 import { createCompany, listCompanies, updateCompany } from "../lib/companies";
 import { createUser, listUsers, updateUser } from "../lib/users";
 import type { AppUser, Empresa } from "../types/app";
@@ -62,7 +63,7 @@ function Companies() {
   }
 
   useEffect(() => {
-    if (session?.usuario.nivel === "super_admin") {
+    if (isSuperAdminSession(session)) {
       void loadCompanies();
     }
   }, [session]);
@@ -76,7 +77,7 @@ function Companies() {
     setUsers([]);
   }, [selectedCompanyId]);
 
-  if (session?.usuario.nivel !== "super_admin") {
+  if (!isSuperAdminSession(session)) {
     return <Navigate to="/painel" replace />;
   }
 
