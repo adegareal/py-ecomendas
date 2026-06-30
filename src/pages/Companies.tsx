@@ -263,13 +263,11 @@ function Companies() {
             : await createUser(values);
 
           if (!result.error) {
-            if (values.empresa_id !== selectedCompany?.id) {
-              setUserDialogOpen(false);
-            }
-
-            if (selectedCompany?.id) {
-              await loadUsersByCompany(selectedCompany.id);
-            }
+            setEditingUser(null);
+            setUserDialogOpen(false);
+            setSelectedCompanyId(values.empresa_id);
+            await loadCompanies();
+            await loadUsersByCompany(values.empresa_id);
           }
 
           return result;
