@@ -7,10 +7,16 @@ import Dialog from "../ui/Dialog";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
 
+type CompanyOption = {
+  value: string;
+  label: string;
+};
+
 type UserFormDialogProps = {
   open: boolean;
   usuario: AppUser | null;
   empresaId: string;
+  companyOptions?: CompanyOption[];
   onClose: () => void;
   onSubmit: (values: {
     nome: string;
@@ -21,11 +27,19 @@ type UserFormDialogProps = {
   }) => Promise<ServiceResult<AppUser>>;
 };
 
-function UserFormDialog({ open, usuario, empresaId, onClose, onSubmit }: UserFormDialogProps) {
+function UserFormDialog({
+  open,
+  usuario,
+  empresaId,
+  companyOptions,
+  onClose,
+  onSubmit,
+}: UserFormDialogProps) {
   const [nome, setNome] = useState("");
   const [username, setUsername] = useState("");
   const [senha, setSenha] = useState("");
   const [nivel, setNivel] = useState("viewer");
+  const [selectedEmpresaId, setSelectedEmpresaId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -33,7 +47,8 @@ function UserFormDialog({ open, usuario, empresaId, onClose, onSubmit }: UserFor
     setUsername(usuario?.username ?? "");
     setSenha("");
     setNivel(usuario?.nivel ?? "viewer");
-  }, [usuario, open]);
+    setSelectedEmpresaId(usuario?.empresa_id ?? empresaId);
+  }, [usuario, open, empresaId]);
 
   return (
     <Dialog
@@ -64,7 +79,7 @@ function UserFormDialog({ open, usuario, empresaId, onClose, onSubmit }: UserFor
             username: username.trim().toLowerCase(),
             senha: senha || undefined,
             nivel,
-            empresa_id: empresaId,
+            empresa_id: selectedEmpresaId,
           });
 
           setSaving(false);
@@ -90,6 +105,24 @@ function UserFormDialog({ open, usuario, empresaId, onClose, onSubmit }: UserFor
             </option>
           ))}
         </Select>
+
+        {companyOptions?.length ? (
+          <div className="sm:col-span-2">
+            <Select
+              label="Empresa"
+              value={selectedEmpresaId}
+              onChange={(e) => setSelectedEmpresaId(e.target.value)}
+              required
+            >
+              <option value="">Selecione a empresa</option>
+              {companyOptions.map((company) => (
+                <option key={company.value} value={company.value}>
+                  {company.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        ) : null}
 
         <div className="sm:col-span-2">
           <Input

@@ -146,12 +146,7 @@ function Users() {
         onClose={() => setDialogOpen(false)}
         onSubmit={async (values) => {
           const result = editingUser
-            ? await updateUser(editingUser.id, session?.empresa.id ?? "", {
-                nome: values.nome,
-                username: values.username,
-                senha: values.senha,
-                nivel: values.nivel,
-              })
+            ? await updateUser(editingUser.id, session?.empresa.id ?? "", values)
             : await createUser(values);
 
           if (!result.error) {

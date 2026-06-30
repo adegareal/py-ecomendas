@@ -6,12 +6,12 @@ import AppShell from "../components/AppShell";
 import CompanyFormDialog from "../components/companies/CompanyFormDialog";
 import OrderStatusBadge from "../components/OrderStatusBadge";
 import Button from "../components/ui/Button";
+import UserFormDialog from "../components/users/UserFormDialog";
 import { useAppSession } from "../hooks/useAppSession";
 import { isSuperAdminSession } from "../lib/access";
 import { createCompany, listCompanies, updateCompany } from "../lib/companies";
 import { createUser, listUsers, updateUser } from "../lib/users";
 import type { AppUser, Empresa } from "../types/app";
-import UserFormDialog from "../components/users/UserFormDialog";
 
 function Companies() {
   const { session } = useAppSession();
@@ -28,6 +28,15 @@ function Companies() {
   const selectedCompany = useMemo(
     () => companies.find((company) => company.id === selectedCompanyId) ?? null,
     [companies, selectedCompanyId]
+  );
+
+  const companyOptions = useMemo(
+    () =>
+      companies.map((company) => ({
+        value: company.id,
+        label: company.nome,
+      })),
+    [companies]
   );
 
   async function loadCompanies() {
@@ -246,19 +255,21 @@ function Companies() {
         open={userDialogOpen}
         usuario={editingUser}
         empresaId={selectedCompany?.id ?? ""}
+        companyOptions={companyOptions}
         onClose={() => setUserDialogOpen(false)}
         onSubmit={async (values) => {
           const result = editingUser
-            ? await updateUser(editingUser.id, selectedCompany?.id ?? "", {
-                nome: values.nome,
-                username: values.username,
-                senha: values.senha,
-                nivel: values.nivel,
-              })
+            ? await updateUser(editingUser.id, selectedCompany?.id ?? "", values)
             : await createUser(values);
 
-          if (!result.error && selectedCompany?.id) {
-            await loadUsersByCompany(selectedCompany.id);
+          if (!result.error) {
+            if (values.empresa_id !== selectedCompany?.id) {
+              setUserDialogOpen(false);
+            }
+
+            if (selectedCompany?.id) {
+              await loadUsersByCompany(selectedCompany.id);
+            }
           }
 
           return result;

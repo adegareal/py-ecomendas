@@ -45,13 +45,14 @@ export async function createUser(payload: UserPayload): Promise<ServiceResult<Ap
 
 export async function updateUser(
   id: string,
-  empresaId: string,
-  payload: Omit<UserPayload, "empresa_id">
+  currentEmpresaId: string,
+  payload: UserPayload
 ): Promise<ServiceResult<AppUser>> {
   const updatePayload = {
     nome: payload.nome,
     username: payload.username,
     nivel: payload.nivel,
+    empresa_id: payload.empresa_id,
     ...(payload.senha ? { senha: payload.senha } : {}),
   };
 
@@ -59,7 +60,7 @@ export async function updateUser(
     .from("usuarios")
     .update(updatePayload)
     .eq("id", id)
-    .eq("empresa_id", empresaId)
+    .eq("empresa_id", currentEmpresaId)
     .select("id, username, nome, role, created_at, empresa_id, nivel")
     .single<AppUser>();
 
