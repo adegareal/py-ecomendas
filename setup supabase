@@ -1,0 +1,65 @@
+-- ══════════════════════════════════════════
+--  PY Encomendas — Setup Supabase
+--  Cole este SQL no Supabase > SQL Editor
+-- ══════════════════════════════════════════
+
+-- 1. USUÁRIOS DO APP
+create table if not exists usuarios (
+  id uuid primary key default gen_random_uuid(),
+  username text unique not null,
+  senha text not null,
+  nome text not null,
+  role text not null default 'viewer', -- 'admin' ou 'viewer'
+  created_at timestamptz default now()
+);
+
+-- 2. LOJAS
+create table if not exists lojas (
+  id uuid primary key default gen_random_uuid(),
+  nome text unique not null,
+  created_at timestamptz default now()
+);
+
+-- 3. PEDIDOS
+create table if not exists pedidos (
+  id uuid primary key default gen_random_uuid(),
+  cliente text not null,
+  status text not null default 'Pendente',
+  data date not null default current_date,
+  taxa numeric(10,2) not null default 0,
+  created_at timestamptz default now()
+);
+
+-- 4. ITENS DO PEDIDO
+create table if not exists itens (
+  id uuid primary key default gen_random_uuid(),
+  pedido_id uuid references pedidos(id) on delete cascade,
+  encomenda text not null,
+  valor numeric(10,2) not null default 0,
+  loja text not null default '',
+  item_status text not null default 'Aguardando pagamento',
+  created_at timestamptz default now()
+);
+
+-- ══════════════════════════════════════════
+-- DADOS INICIAIS
+-- ══════════════════════════════════════════
+
+-- Usuários padrão (TROQUE as senhas!)
+insert into usuarios (username, senha, nome, role) values
+  ('admin',    'py2025',    'Administrador', 'admin'),
+  ('parceiro', 'parceiro1', 'Parceiro',      'viewer')
+on conflict (username) do nothing;
+
+-- Lojas padrão
+insert into lojas (nome) values
+  ('City Center'), ('Shopping del Sol'), ('Mariscal')
+on conflict (nome) do nothing;
+
+-- ══════════════════════════════════════════
+-- DESABILITAR RLS (acesso público via anon key)
+-- ══════════════════════════════════════════
+alter table usuarios disable row level security;
+alter table lojas    disable row level security;
+alter table pedidos  disable row level security;
+alter table itens    disable row level security;
