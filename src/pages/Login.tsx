@@ -1,11 +1,10 @@
-import { Building2, KeyRound, ShieldCheck, UserRound } from "lucide-react";
+import { Building2, KeyRound, UserRound } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Navigate, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import { useAppSession } from "../hooks/useAppSession";
-import { createInitialSuperAdmin } from "../lib/bootstrap";
 
 function Login() {
   const navigate = useNavigate();
@@ -14,7 +13,6 @@ function Login() {
   const [username, setUsername] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
-  const [creatingAccess, setCreatingAccess] = useState(false);
 
   if (session) {
     return <Navigate to="/painel" replace />;
@@ -102,57 +100,6 @@ function Login() {
               {loading ? "Entrando..." : "Entrar no sistema"}
             </Button>
           </form>
-
-          <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
-            <div className="flex items-start gap-3">
-              <div className="rounded-2xl bg-blue-100 p-3 text-blue-700">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-
-              <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900">Preparar acesso inicial</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Use esta ação para criar ou restaurar o acesso inicial padrão do sistema.
-                </p>
-
-                <div className="mt-4 rounded-2xl bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200">
-                  <p>
-                    <strong>Empresa:</strong> principal
-                  </p>
-                  <p>
-                    <strong>Usuário:</strong> superadmin
-                  </p>
-                  <p>
-                    <strong>Senha:</strong> admin123
-                  </p>
-                </div>
-
-                <Button
-                  className="mt-4 w-full sm:w-auto"
-                  disabled={creatingAccess}
-                  onClick={async () => {
-                    setCreatingAccess(true);
-
-                    const result = await createInitialSuperAdmin();
-
-                    setCreatingAccess(false);
-
-                    if (result.error) {
-                      toast.error(result.error);
-                      return;
-                    }
-
-                    setEmpresaSlug(result.data?.empresaSlug ?? "");
-                    setUsername(result.data?.username ?? "");
-                    setSenha(result.data?.senha ?? "");
-                    toast.success("Acesso inicial pronto. Agora é só entrar.");
-                  }}
-                >
-                  {creatingAccess ? "Preparando acesso..." : "Criar ou restaurar super admin"}
-                </Button>
-              </div>
-            </div>
-          </div>
         </section>
       </div>
     </main>
