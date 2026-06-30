@@ -242,6 +242,7 @@ function Orders() {
         open={dialogOpen}
         pedido={editingOrder}
         empresaId={session?.empresa.id ?? ""}
+        lojas={stores.map((store) => store.nome)}
         onClose={() => setDialogOpen(false)}
         onSubmit={async (values) => {
           const result = editingOrder
@@ -251,12 +252,39 @@ function Orders() {
                 data: values.data,
                 taxa: values.taxa,
               })
-            : await createOrder(values);
+            : await createOrder({
+                cliente: values.cliente,
+                status: values.status,
+                data: values.data,
+                taxa: values.taxa,
+                empresa_id: values.empresa_id,
+              });
 
-          if (!result.error) {
-            await loadData();
+          if (result.error || !result.data) {
+            return result;
           }
 
+          if (!editingOrder) {
+            for (const item of values.items) {
+              const itemResult = await createOrderItem({
+                pedido_id: result.data.id,
+                encomenda: item.encomenda,
+                valor: item.valor,
+                loja: item.loja,
+                item_status: item.item_status,
+                empresa_id: values.empresa_id,
+              });
+
+              if (itemResult.error) {
+                return {
+                  data: result.data,
+                  error: itemResult.error,
+                };
+              }
+            }
+          }
+
+          await loadData();
           return result;
         }}
       />
