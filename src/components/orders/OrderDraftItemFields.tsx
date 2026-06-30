@@ -26,8 +26,8 @@ function OrderDraftItemFields({
   onRemove,
 }: OrderDraftItemFieldsProps) {
   return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-800/70 p-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="rounded-2xl border border-slate-700 bg-slate-800/70 p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">
           Produto {index + 1}
         </p>
@@ -36,7 +36,7 @@ function OrderDraftItemFields({
           <button
             type="button"
             onClick={() => onRemove(index)}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 sm:w-auto"
           >
             <Trash2 className="h-4 w-4" />
             Remover
@@ -63,7 +63,7 @@ function OrderDraftItemFields({
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               Valor (R$)

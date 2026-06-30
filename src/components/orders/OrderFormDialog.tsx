@@ -77,179 +77,184 @@ function OrderFormDialog({
 
   return (
     <Dialog open={open} onClose={onClose} title="" description="">
-      <form
-        className="space-y-5 rounded-[2rem] border border-slate-700 bg-slate-900 p-5 text-white sm:p-6"
-        onSubmit={async (event) => {
-          event.preventDefault();
+      <div className="w-full max-w-4xl">
+        <form
+          className="max-h-[85vh] overflow-y-auto rounded-[2rem] border border-slate-700 bg-slate-900 p-4 text-white sm:p-6"
+          onSubmit={async (event) => {
+            event.preventDefault();
 
-          if (!pedido) {
-            const hasInvalidItem = draftItems.some(
-              (item) => !item.encomenda.trim() || !item.loja.trim() || Number(item.valor || 0) <= 0
-            );
+            if (!pedido) {
+              const hasInvalidItem = draftItems.some(
+                (item) => !item.encomenda.trim() || !item.loja.trim() || Number(item.valor || 0) <= 0
+              );
 
-            if (hasInvalidItem) {
-              toast.error("Preencha corretamente os produtos do pedido.");
+              if (hasInvalidItem) {
+                toast.error("Preencha corretamente os produtos do pedido.");
+                return;
+              }
+            }
+
+            setSaving(true);
+
+            const result = await onSubmit({
+              cliente,
+              status,
+              data,
+              taxa: Number(taxa || 0),
+              empresa_id: empresaId,
+              items: pedido
+                ? []
+                : draftItems.map((item) => ({
+                    encomenda: item.encomenda.trim(),
+                    valor: Number(item.valor || 0),
+                    loja: item.loja,
+                    item_status: item.item_status,
+                  })),
+            });
+
+            setSaving(false);
+
+            if (result.error) {
+              toast.error(result.error);
               return;
             }
-          }
 
-          setSaving(true);
-
-          const result = await onSubmit({
-            cliente,
-            status,
-            data,
-            taxa: Number(taxa || 0),
-            empresa_id: empresaId,
-            items: pedido
-              ? []
-              : draftItems.map((item) => ({
-                  encomenda: item.encomenda.trim(),
-                  valor: Number(item.valor || 0),
-                  loja: item.loja,
-                  item_status: item.item_status,
-                })),
-          });
-
-          setSaving(false);
-
-          if (result.error) {
-            toast.error(result.error);
-            return;
-          }
-
-          toast.success(pedido ? "Pedido atualizado." : "Pedido criado.");
-          onClose();
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-slate-800 p-3 text-amber-300">
-            <Package2 className="h-5 w-5" />
+            toast.success(pedido ? "Pedido atualizado." : "Pedido criado.");
+            onClose();
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-slate-800 p-3 text-amber-300">
+              <Package2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold text-white">{pedido ? "Editar pedido" : "Novo pedido"}</h2>
+              <p className="text-sm text-slate-400">
+                {pedido ? "Atualize os dados principais do pedido." : "Cadastre o pedido e seus produtos de uma vez."}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">{pedido ? "Editar pedido" : "Novo pedido"}</h2>
-            <p className="text-sm text-slate-400">
-              {pedido ? "Atualize os dados principais do pedido." : "Cadastre o pedido e seus produtos de uma vez."}
-            </p>
-          </div>
-        </div>
 
-        <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-            Nome do cliente
-          </label>
-          <input
-            value={cliente}
-            onChange={(event) => setCliente(event.target.value)}
-            placeholder="Ex: Maria Silva"
-            required
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
-          />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
+          <div className="mt-5">
             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              Data
+              Nome do cliente
             </label>
             <input
-              type="date"
-              value={data}
-              onChange={(event) => setData(event.target.value)}
+              value={cliente}
+              onChange={(event) => setCliente(event.target.value)}
+              placeholder="Ex: Maria Silva"
               required
-              className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-400"
+              className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-              Status
-            </label>
-            <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-              className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-400"
-            >
-              {pedidoStatusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Data
+              </label>
+              <input
+                type="date"
+                value={data}
+                onChange={(event) => setData(event.target.value)}
+                required
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-400"
+              />
+            </div>
 
-        <div className="rounded-2xl border border-violet-500/30 bg-violet-500/10 p-4">
-          <div className="flex items-center gap-2 text-sm font-semibold text-violet-300">
-            <HeartHandshake className="h-4 w-4" />
-            <span>Taxa de serviço (R$)</span>
-          </div>
-
-          <input
-            type="number"
-            step="0.01"
-            value={taxa}
-            onChange={(event) => setTaxa(event.target.value)}
-            placeholder="Ex: 80.00"
-            className="mt-3 w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
-          />
-
-          <p className="mt-2 text-sm text-slate-400">
-            Valor combinado com o cliente pelo serviço de busca.
-          </p>
-        </div>
-
-        {!pedido ? (
-          <>
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                Produtos ({draftItems.length})
-              </p>
-
-              <button
-                type="button"
-                onClick={() => setDraftItems((current) => [...current, createEmptyDraftItem(lojas)])}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20"
+            <div>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Status
+              </label>
+              <select
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-400"
               >
-                <Plus className="h-4 w-4" />+ Produto
-              </button>
+                {pedidoStatusOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-violet-500/30 bg-violet-500/10 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-violet-300">
+              <HeartHandshake className="h-4 w-4" />
+              <span>Taxa de serviço (R$)</span>
             </div>
 
-            <div className="space-y-4">
-              {draftItems.map((item, index) => (
-                <OrderDraftItemFields
-                  key={`${index}-${open}`}
-                  index={index}
-                  item={item}
-                  stores={lojas}
-                  canRemove={draftItems.length > 1}
-                  onChange={(itemIndex, nextItem) =>
-                    setDraftItems((current) =>
-                      current.map((entry, currentIndex) =>
-                        currentIndex === itemIndex ? nextItem : entry
+            <input
+              type="number"
+              step="0.01"
+              value={taxa}
+              onChange={(event) => setTaxa(event.target.value)}
+              placeholder="Ex: 80.00"
+              className="mt-3 w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
+            />
+
+            <p className="mt-2 text-sm text-slate-400">
+              Valor combinado com o cliente pelo serviço de busca.
+            </p>
+          </div>
+
+          {!pedido ? (
+            <>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                  Produtos ({draftItems.length})
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setDraftItems((current) => [...current, createEmptyDraftItem(lojas)])}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/50 bg-amber-400/10 px-3 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20 sm:w-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  + Produto
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-4">
+                {draftItems.map((item, index) => (
+                  <OrderDraftItemFields
+                    key={`${index}-${open}`}
+                    index={index}
+                    item={item}
+                    stores={lojas}
+                    canRemove={draftItems.length > 1}
+                    onChange={(itemIndex, nextItem) =>
+                      setDraftItems((current) =>
+                        current.map((entry, currentIndex) =>
+                          currentIndex === itemIndex ? nextItem : entry
+                        )
                       )
-                    )
-                  }
-                  onRemove={(itemIndex) =>
-                    setDraftItems((current) => current.filter((_, currentIndex) => currentIndex !== itemIndex))
-                  }
-                />
-              ))}
-            </div>
+                    }
+                    onRemove={(itemIndex) =>
+                      setDraftItems((current) => current.filter((_, currentIndex) => currentIndex !== itemIndex))
+                    }
+                  />
+                ))}
+              </div>
 
-            <OrderDraftSummary subtotal={subtotal} taxa={Number(taxa || 0)} total={total} />
-          </>
-        ) : null}
+              <div className="mt-4">
+                <OrderDraftSummary subtotal={subtotal} taxa={Number(taxa || 0)} total={total} />
+              </div>
+            </>
+          ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button type="button" variant="secondary" onClick={onClose} className="w-full">
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={saving} className="w-full">
-            {saving ? "Salvando..." : pedido ? "Salvar alterações" : "Criar pedido"}
-          </Button>
-        </div>
-      </form>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Button type="button" variant="secondary" onClick={onClose} className="w-full">
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving} className="w-full">
+              {saving ? "Salvando..." : pedido ? "Salvar alterações" : "Criar pedido"}
+            </Button>
+          </div>
+        </form>
+      </div>
     </Dialog>
   );
 }
