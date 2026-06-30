@@ -53,53 +53,19 @@ const norm = v => v.trim();
 function Login({onLogin}) {
   const [user,setUser]=useState("");
   const [pass,setPass]=useState("");
-  const [nome,setNome]=useState("");
-  const [novoUser,setNovoUser]=useState("");
-  const [novaSenha,setNovaSenha]=useState("");
   const [erro,setErro]=useState("");
-  const [okMsg,setOkMsg]=useState("");
   const [loading,setLoading]=useState(false);
   const [showP,setShowP]=useState(false);
-  const [showCreate,setShowCreate]=useState(false);
-  const [showNewP,setShowNewP]=useState(false);
 
   const handleLogin = async () => {
     const username = norm(user);
     if(!username||!pass.trim()){setErro("Preencha usuário e senha.");return;}
-    setLoading(true); setErro(""); setOkMsg("");
+    setLoading(true); setErro("");
     try {
       const {data,error} = await sb.from("usuarios").select("*").eq("username",username).eq("senha",pass).single();
       if(error||!data) setErro("Usuário ou senha incorretos.");
       else onLogin(data);
     } catch(e){ setErro("Erro de conexão. Tente novamente."); }
-    setLoading(false);
-  };
-
-  const handleCreateAccount = async () => {
-    const nomeLimpo = norm(nome);
-    const username = norm(novoUser);
-    const senha = novaSenha.trim();
-    if(!nomeLimpo||!username||!senha) { setErro("Preencha nome, usuário e senha para criar a conta."); return; }
-    if(senha.length < 4) { setErro("A senha deve ter pelo menos 4 caracteres."); return; }
-    setLoading(true); setErro(""); setOkMsg("");
-    try {
-      const {data:existingUser,error:existingError} = await sb.from("usuarios").select("id").eq("username",username).maybeSingle();
-      if(existingError) {
-        setErro("Não foi possível verificar o usuário.");
-      } else if(existingUser) {
-        setErro("Este usuário já existe.");
-      } else {
-        const {error:createError} = await sb.from("usuarios").insert({ username, senha, nome:nomeLimpo, role:"viewer" });
-        if(createError) setErro("Não foi possível criar a conta.");
-        else {
-          setNome(""); setNovoUser(""); setNovaSenha(""); setShowCreate(false);
-          setUser(username); setPass("");
-          setOkMsg("Conta criada com sucesso. Agora faça login.");
-        }
-      }
-    } catch(e) {
-      setErro("Não foi possível criar a conta.");
-    }
     setLoading(false);
   };
 
@@ -109,65 +75,34 @@ function Login({onLogin}) {
         <div style={{textAlign:"center",marginBottom:28}}>
           <div style={{fontSize:48,marginBottom:10}}>🛃</div>
           <div style={{color:"#fff",fontSize:22,fontWeight:800}}>PY Encomendas</div>
-          <div style={{color:"#8BAED4",fontSize:13,marginTop:4}}>{showCreate?"Crie sua conta para continuar":"Faça login para continuar"}</div>
+          <div style={{color:"#8BAED4",fontSize:13,marginTop:4}}>Faça login para continuar</div>
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          {showCreate ? (
-            <>
-              <div>
-                <label style={lbl}>Nome</label>
-                <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Seu nome" style={inp} autoFocus/>
-              </div>
-              <div>
-                <label style={lbl}>Usuário</label>
-                <input value={novoUser} onChange={e=>setNovoUser(e.target.value)} placeholder="Escolha um usuário"
-                  onKeyDown={e=>e.key==="Enter"&&handleCreateAccount()} style={inp}/>
-              </div>
-              <div>
-                <label style={lbl}>Senha</label>
-                <div style={{position:"relative"}}>
-                  <input type={showNewP?"text":"password"} value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}
-                    placeholder="Crie uma senha" onKeyDown={e=>e.key==="Enter"&&handleCreateAccount()}
-                    style={{...inp,paddingRight:44}}/>
-                  <button type="button" onClick={()=>setShowNewP(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#8BAED4",cursor:"pointer",fontSize:16}}>
-                    {showNewP?"🙈":"👁️"}
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label style={lbl}>Usuário</label>
-                <input value={user} onChange={e=>setUser(e.target.value)} placeholder="Seu usuário"
-                  onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={inp} autoFocus/>
-              </div>
-              <div>
-                <label style={lbl}>Senha</label>
-                <div style={{position:"relative"}}>
-                  <input type={showP?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)}
-                    placeholder="Sua senha" onKeyDown={e=>e.key==="Enter"&&handleLogin()}
-                    style={{...inp,paddingRight:44}}/>
-                  <button type="button" onClick={()=>setShowP(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#8BAED4",cursor:"pointer",fontSize:16}}>
-                    {showP?"🙈":"👁️"}
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+          <div>
+            <label style={lbl}>Usuário</label>
+            <input value={user} onChange={e=>setUser(e.target.value)} placeholder="Seu usuário"
+              onKeyDown={e=>e.key==="Enter"&&handleLogin()} style={inp} autoFocus/>
+          </div>
+          <div>
+            <label style={lbl}>Senha</label>
+            <div style={{position:"relative"}}>
+              <input type={showP?"text":"password"} value={pass} onChange={e=>setPass(e.target.value)}
+                placeholder="Sua senha" onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+                style={{...inp,paddingRight:44}}/>
+              <button type="button" onClick={()=>setShowP(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#8BAED4",cursor:"pointer",fontSize:16}}>
+                {showP?"🙈":"👁️"}
+              </button>
+            </div>
+          </div>
           {erro&&<div style={{background:"rgba(220,53,69,0.15)",border:"1px solid rgba(220,53,69,0.3)",color:"#FF6B7A",borderRadius:8,padding:"8px 12px",fontSize:13}}>{erro}</div>}
-          {okMsg&&<div style={{background:"rgba(40,167,69,0.15)",border:"1px solid rgba(40,167,69,0.3)",color:"#7CFF9A",borderRadius:8,padding:"8px 12px",fontSize:13}}>{okMsg}</div>}
-          <button onClick={showCreate?handleCreateAccount:handleLogin} disabled={loading}
+          <button onClick={handleLogin} disabled={loading}
             style={{...btnP,flex:"none",marginTop:4,padding:"12px",opacity:loading?0.7:1}}>
-            {loading ? (showCreate?"Criando conta...":"Entrando...") : (showCreate?"Criar conta":"Entrar")}
-          </button>
-          <button onClick={()=>{ setShowCreate(v=>!v); setErro(""); setOkMsg(""); }} disabled={loading}
-            style={{...btnG,flex:"none",padding:"12px"}}>
-            {showCreate?"Já tenho conta":"Criar conta"}
+            {loading?"Entrando...":"Entrar"}
           </button>
         </div>
         <div style={{color:"#5A7A99",fontSize:11,textAlign:"center",marginTop:20}}>PY Encomendas · Acesso restrito</div>
       </div>
+
     </div>
   );
 }
