@@ -1,156 +1,321 @@
-import { Building2, Package, ShoppingBag, Users } from "lucide-react";
+import {
+  CheckSquare,
+  Coins,
+  Hourglass,
+  Search,
+  UserRound,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import AppShell from "../components/AppShell";
-import OrderStatusBadge from "../components/OrderStatusBadge";
-import StatsCard from "../components/StatsCard";
+import OrderFormDialog from "../components/orders/OrderFormDialog";
+import OrderItemsDialog from "../components/orders/OrderItemsDialog";
+import OrderListCard from "../components/orders/OrderListCard";
+import OrdersSummaryCard from "../components/orders/OrdersSummaryCard";
 import { useAppSession } from "../hooks/useAppSession";
-import { formatCurrency, formatDate } from "../lib/formatters";
-import { listOrderItems, listOrders } from "../lib/orders";
+import { formatCurrency } from "../lib/formatters";
+import {
+  createOrder,
+  createOrderItem,
+  deleteOrder,
+  deleteOrderItem,
+  listOrderItems,
+  listOrders,
+  updateOrder,
+  updateOrderItem,
+} from "../lib/orders";
 import { listStores } from "../lib/stores";
-import { listUsers } from "../lib/users";
-import type { AppUser, ItemPedido, Loja, Pedido } from "../types/app";
+import type { ItemPedido, Loja, Pedido } from "../types/app";
 
 function Dashboard() {
   const { session } = useAppSession();
   const [orders, setOrders] = useState<Pedido[]>([]);
   const [items, setItems] = useState<ItemPedido[]>([]);
   const [stores, setStores] = useState<Loja[]>([]);
-  const [users, setUsers] = useState<AppUser[]>([]);
+  const [search, setSearch] = useState("");
+  const [editingOrder, setEditingOrder] = useState<Pedido | null>(null);
+  const [viewingOrder, setViewingOrder] = useState<Pedido | null>(null);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [itemsDialogOpen, setItemsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      if (!session) {
-        return;
-      }
-
-      setLoading(true);
-
-      const [ordersResult, itemsResult, storesResult, usersResult] = await Promise.all([
-        listOrders(session.empresa.id),
-        listOrderItems(session.empresa.id),
-        listStores(session.empresa.id),
-        listUsers(session.empresa.id),
-      ]);
-
-      if (ordersResult.error) toast.error(ordersResult.error);
-      if (itemsResult.error) toast.error(itemsResult.error);
-      if (storesResult.error) toast.error(storesResult.error);
-      if (usersResult.error) toast.error(usersResult.error);
-
-      setOrders(ordersResult.data ?? []);
-      setItems(itemsResult.data ?? []);
-      setStores(storesResult.data ?? []);
-      setUsers(usersResult.data ?? []);
-      setLoading(false);
+  async function loadData() {
+    if (!session) {
+      return;
     }
 
+    setLoading(true);
+
+    const [ordersResult, itemsResult, storesResult] = await Promise.all([
+      listOrders(session.empresa.id),
+      listOrderItems(session.empresa.id),
+      listStores(session.empresa.id),
+    ]);
+
+    if (ordersResult.error) toast.error(ordersResult.error);
+    if (itemsResult.error) toast.error(itemsResult.error);
+    if (storesResult.error) toast.error(storesResult.error);
+
+    setOrders(ordersResult.data ?? []);
+    setItems(itemsResult.data ?? []);
+    setStores(storesResult.data ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
     void loadData();
   }, [session]);
 
   const totals = useMemo(() => {
-    const openOrders = orders.filter((order) => order.status !== "Entregue").length;
-    const itemsValue = items.reduce((sum, item) => sum + Number(item.valor || 0), 0);
-    const feesValue = orders.reduce((sum, order) => sum + Number(order.taxa || 0), 0);
+    const uniqueClients = new Set(orders.map((order) => order.cliente.trim().toLowerCase()));
+    const itemsTotal = items.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+    const feesTotal = orders.reduce((sum, order) => sum + Number(order.taxa || 0), 0);
+    const pendingCount = orders.filter((order) => order.status !== "Entregue").length;
+    const deliveredCount = orders.filter((order) => order.status === "Entregue").length;
 
     return {
-      orders: orders.length,
-      openOrders,
-      stores: stores.length,
-      users: users.length,
-      revenue: formatCurrency(itemsValue + feesValue),
+      clients: uniqueClients.size,
+      total: itemsTotal + feesTotal,
+      fees: feesTotal,
+      pending: pendingCount,
+      delivered: deliveredCount,
     };
-  }, [items, orders, stores, users]);
+  }, [items, orders]);
+
+  const filteredOrders = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    return orders.filter((order) => {
+      const relatedItems = items.filter((item) => item.pedido_id === order.id);
+
+      if (!term) {
+        return true;
+      }
+
+      return (
+        order.cliente.toLowerCase().includes(term) ||
+        order.status.toLowerCase().includes(term) ||
+        relatedItems.some(
+          (item) =>
+            item.encomenda.toLowerCase().includes(term) ||
+            item.loja.toLowerCase().includes(term)
+        )
+      );
+    });
+  }, [items, orders, search]);
 
   return (
     <AppShell
       title="Painel principal"
       description="Resumo rápido da operação atual da empresa."
+      hidePageIntro
+      headerActions={
+        <button
+          type="button"
+          onClick={() => {
+            setEditingOrder(null);
+            setOrderDialogOpen(true);
+          }}
+          className="inline-flex items-center justify-center rounded-xl bg-[#ffd400] px-5 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-[#ffdf40]"
+        >
+          + Novo Pedido
+        </button>
+      }
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatsCard
-          title="Pedidos"
-          value={String(totals.orders)}
-          description={`${totals.openOrders} ainda em aberto`}
-          icon={Package}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <OrdersSummaryCard
+          title="Clientes"
+          value={String(totals.clients)}
+          icon={UserRound}
+          dotClassName="bg-sky-400"
         />
-        <StatsCard
-          title="Valor movimentado"
-          value={totals.revenue}
-          description="Itens somados com taxas dos pedidos"
-          icon={ShoppingBag}
+        <OrdersSummaryCard
+          title="Total Geral"
+          value={formatCurrency(totals.total)}
+          icon={Coins}
+          dotClassName="bg-emerald-400"
         />
-        <StatsCard
-          title="Lojas"
-          value={String(totals.stores)}
-          description="Base disponível para vincular itens"
-          icon={Building2}
+        <OrdersSummaryCard
+          title="Em Taxas"
+          value={formatCurrency(totals.fees)}
+          icon={Coins}
+          dotClassName="bg-violet-400"
         />
-        <StatsCard
-          title="Usuários"
-          value={String(totals.users)}
-          description="Acessos cadastrados para esta empresa"
-          icon={Users}
+        <OrdersSummaryCard
+          title="Pendentes"
+          value={String(totals.pending)}
+          icon={Hourglass}
+          dotClassName="bg-amber-400"
         />
-      </div>
+        <OrdersSummaryCard
+          title="Entregues"
+          value={String(totals.delivered)}
+          icon={CheckSquare}
+          dotClassName="bg-teal-400"
+        />
+      </section>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white">Pedidos recentes</h2>
-              <p className="mt-1 text-sm text-slate-300">
-                Acompanhe os últimos pedidos da empresa.
-              </p>
-            </div>
-          </div>
+      <section className="mt-5">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Buscar cliente, produto ou loja..."
+            className="h-12 w-full rounded-2xl border border-white/10 bg-[#223245] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-400 focus:border-blue-400"
+          />
+        </div>
 
-          <div className="mt-6 space-y-4">
-            {loading ? (
-              <p className="text-sm text-slate-300">Carregando dados...</p>
-            ) : orders.length ? (
-              orders.slice(0, 6).map((order) => (
-                <div key={order.id} className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h3 className="font-semibold text-white">{order.cliente}</h3>
-                      <p className="mt-1 text-sm text-slate-300">
-                        Data: {formatDate(order.data)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <OrderStatusBadge status={order.status} />
-                      <span className="text-sm font-bold text-emerald-400">
-                        {formatCurrency(Number(order.taxa || 0))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-slate-300">Nenhum pedido cadastrado ainda.</p>
-            )}
-          </div>
-        </section>
+        <div className="mt-4 space-y-4">
+          {loading ? (
+            <div className="rounded-3xl border border-white/10 bg-[#223245] p-5 text-sm text-slate-300">
+              Carregando pedidos...
+            </div>
+          ) : filteredOrders.length ? (
+            filteredOrders.map((order) => {
+              const relatedItems = items.filter((item) => item.pedido_id === order.id);
+              const totalItemsValue = relatedItems.reduce(
+                (sum, item) => sum + Number(item.valor || 0),
+                0
+              );
 
-        <section className="rounded-3xl border border-white/10 bg-[#223245] p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-white">Informações da sessão</h2>
-          <div className="mt-6 space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
-              <p className="text-sm font-medium text-slate-300">Empresa</p>
-              <p className="mt-2 text-lg font-bold text-white">{session?.empresa.nome}</p>
-              <p className="mt-1 text-sm text-blue-200">Slug: {session?.empresa.slug}</p>
+              return (
+                <OrderListCard
+                  key={order.id}
+                  pedido={order}
+                  itemCount={relatedItems.length}
+                  totalValue={totalItemsValue + Number(order.taxa || 0)}
+                  selected={viewingOrder?.id === order.id && itemsDialogOpen}
+                  onSelect={() => {
+                    setViewingOrder(order);
+                    setItemsDialogOpen(true);
+                  }}
+                  onEdit={() => {
+                    setEditingOrder(order);
+                    setOrderDialogOpen(true);
+                  }}
+                  onDelete={async () => {
+                    if (!session || !window.confirm("Deseja excluir este pedido?")) {
+                      return;
+                    }
+
+                    const result = await deleteOrder(order.id, session.empresa.id);
+
+                    if (result.error) {
+                      toast.error(result.error);
+                      return;
+                    }
+
+                    toast.success("Pedido removido.");
+
+                    if (viewingOrder?.id === order.id) {
+                      setViewingOrder(null);
+                      setItemsDialogOpen(false);
+                    }
+
+                    await loadData();
+                  }}
+                />
+              );
+            })
+          ) : (
+            <div className="rounded-3xl border border-dashed border-white/15 bg-[#223245] p-6 text-sm text-slate-300">
+              Nenhum pedido encontrado.
             </div>
-            <div className="rounded-2xl border border-white/10 bg-[#1c2a3b] p-4">
-              <p className="text-sm font-medium text-slate-300">Usuário</p>
-              <p className="mt-2 text-lg font-bold text-white">{session?.usuario.nome}</p>
-              <p className="mt-1 text-sm text-blue-200">@{session?.usuario.username}</p>
-              <p className="mt-1 text-sm text-slate-300">Nível: {session?.usuario.nivel}</p>
-            </div>
-          </div>
-        </section>
-      </div>
+          )}
+        </div>
+
+        <p className="mt-4 text-right text-sm text-blue-200">
+          {filteredOrders.length} de {orders.length} pedido(s)
+        </p>
+      </section>
+
+      <OrderItemsDialog
+        open={itemsDialogOpen}
+        pedido={viewingOrder}
+        items={items}
+        empresaId={session?.empresa.id ?? ""}
+        lojas={stores.map((store) => store.nome)}
+        onClose={() => setItemsDialogOpen(false)}
+        onCreateItem={async (values) => {
+          const result = await createOrderItem(values);
+
+          if (!result.error) {
+            await loadData();
+          }
+
+          return result;
+        }}
+        onUpdateItem={async (id, values) => {
+          const result = await updateOrderItem(id, session?.empresa.id ?? "", values);
+
+          if (!result.error) {
+            await loadData();
+          }
+
+          return result;
+        }}
+        onDeleteItem={async (id) => {
+          const result = await deleteOrderItem(id, session?.empresa.id ?? "");
+
+          if (!result.error) {
+            await loadData();
+          }
+
+          return result;
+        }}
+      />
+
+      <OrderFormDialog
+        open={orderDialogOpen}
+        pedido={editingOrder}
+        empresaId={session?.empresa.id ?? ""}
+        lojas={stores.map((store) => store.nome)}
+        onClose={() => setOrderDialogOpen(false)}
+        onSubmit={async (values) => {
+          const result = editingOrder
+            ? await updateOrder(editingOrder.id, session?.empresa.id ?? "", {
+                cliente: values.cliente,
+                status: values.status,
+                data: values.data,
+                taxa: values.taxa,
+              })
+            : await createOrder({
+                cliente: values.cliente,
+                status: values.status,
+                data: values.data,
+                taxa: values.taxa,
+                empresa_id: values.empresa_id,
+              });
+
+          if (result.error || !result.data) {
+            return result;
+          }
+
+          if (!editingOrder) {
+            for (const item of values.items) {
+              const itemResult = await createOrderItem({
+                pedido_id: result.data.id,
+                encomenda: item.encomenda,
+                valor: item.valor,
+                loja: item.loja,
+                item_status: item.item_status,
+                empresa_id: values.empresa_id,
+              });
+
+              if (itemResult.error) {
+                return {
+                  data: result.data,
+                  error: itemResult.error,
+                };
+              }
+            }
+          }
+
+          await loadData();
+          return result;
+        }}
+      />
     </AppShell>
   );
 }
